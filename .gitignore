@@ -1,0 +1,8 @@
+# Ignore all (e.g. executeables)
+*
+
+#Unignore all with extension
+!*.*
+
+# Regular Ignores
+*.out
