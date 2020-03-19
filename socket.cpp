@@ -20,20 +20,20 @@ Socket::~Socket()
 void Socket::Bind(int port){
     m_addrlen = sizeof(m_address);
 
-	m_address.sin_family = AF_INET;
-	m_address.sin_addr.s_addr = INADDR_ANY;
-	m_address.sin_port = htons(port);
-	memset(m_address.sin_zero, 0, m_addrlen);
+    m_address.sin_family = AF_INET;
+    m_address.sin_addr.s_addr = INADDR_ANY;
+    m_address.sin_port = htons(port);
+    memset(m_address.sin_zero, 0, m_addrlen);
 
-	int err = bind(m_fd, (struct sockaddr*)&m_address, m_addrlen);
+    int err = bind(m_fd, (struct sockaddr*)&m_address, m_addrlen);
     if(err != 0) throw std::runtime_error("bind failed");
 
     m_port = port;
 }
 
 void Socket::Listen(){
-  int err = listen(m_fd, 10);
-  if(err < 0) throw std::runtime_error("in listen");
+    int err = listen(m_fd, 10);
+    if(err < 0) throw std::runtime_error("in listen");
 }
 
 Socket Socket::Accept(){
