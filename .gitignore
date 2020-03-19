@@ -6,3 +6,4 @@
 
 # Regular Ignores
 *.out
+.vscode
