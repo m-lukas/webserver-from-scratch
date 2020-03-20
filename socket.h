@@ -6,11 +6,11 @@
 class Socket
 {
 private:
-    int m_fd;
+    int m_socket;
     int m_addrlen, m_port;
     struct sockaddr_in m_address;
 private:
-    explicit Socket(int fd, sockaddr_in address, int port) : m_fd(fd), m_address(address), m_port(port) {};
+    explicit Socket(int socket, sockaddr_in address, int port) : m_socket(socket), m_address(address), m_port(port) {};
 public:
     Socket();
     ~Socket();
