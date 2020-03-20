@@ -3,7 +3,9 @@
 
 #Unignore all with extension
 !*.*
+!*/
 
 # Regular Ignores
 *.out
 .vscode
+socket_old/
