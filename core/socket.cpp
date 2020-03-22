@@ -4,8 +4,57 @@
 #include <stdexcept>
 #include <unistd.h>
 #include <string.h>
+#include <sstream>
+#include <vector>
 
 #include "socket.h"
+#include "../util.cpp"
+
+void parseHeader(char* msg){
+    /*
+    std::string line = "";
+    for(char* it = msg; *it; ++it){
+        if(*it == '\n'){
+            printf("new line\n");
+        }
+    }
+    */
+
+
+
+    //std::vector<std::string> v;
+    std::stringstream ss(msg);
+    std::string line;
+    
+    if(getline(ss, line, '\n')){
+        std::vector<std::string> v = Split(line, ' ', 2);
+        std::string method = v.at(0);
+        std::string path = v.at(1);
+        std::string version = v.at(2);
+
+        std::printf("Method: %s\n", method.c_str());
+        std::printf("Path: %s\n", path.c_str());
+        std::printf("Version: %s\n", version.c_str());
+    }
+
+    while(getline(ss, line, '\n')){
+        if(line == "\r"){
+            break; //end of header
+        }
+
+        std::vector<std::string> v = Split(line, ':', 1);
+
+        std::string field = v.at(0);
+        std::string value = v.at(1);
+
+        std::printf("Field: %s - Value: %s\n", field.c_str(), value.c_str());
+
+        //std::printf("%s\n", line.c_str());
+        //v.push_back(line);
+    }
+
+    //std::printf("%lu\n", v.size());
+}
 
 Socket::Socket()
 {
@@ -48,6 +97,8 @@ void Socket::Read(char* req){
 
     valread = read(m_socket, req, 1024);
     if(valread < 0) throw std::runtime_error("no bytes to read");
+
+    parseHeader(req);
 }
 
 void Socket::Write(char *resp){

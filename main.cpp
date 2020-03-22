@@ -1,6 +1,6 @@
-#include "server.cpp"
+#include "core/server.cpp"
 
-#define PORT 8080
+#define PORT 1234
 
 int main(){
     Server server = Server();
