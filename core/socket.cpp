@@ -10,21 +10,58 @@
 #include "socket.h"
 #include "../util.cpp"
 
-void parseHeader(char* msg){
-    /*
-    std::string line = "";
-    for(char* it = msg; *it; ++it){
-        if(*it == '\n'){
-            printf("new line\n");
-        }
+enum method 
+{    
+    GET,
+    POST,
+    PUT,
+    DELETE,
+    CONNECT,
+    HEAD,
+    OPTIONS,
+    PATCH,
+    TRACE,
+    UNKNOWN = -1,
+};
+
+method getMethod(std::string method){
+    if(method == "GET") return GET;
+    if(method == "POST") return POST;
+    if(method == "PUT") return PUT;
+    if(method == "DELETE") return DELETE;
+    if(method == "CONNECT") return CONNECT;
+    if(method == "HEAD") return HEAD;
+    if(method == "OPTIONS") return OPTIONS;
+    if(method == "PATCH") return PATCH;
+    if(method == "TRACE") return TRACE;
+
+    return UNKNOWN;
+}
+
+bool isValidMethod(std::string method){
+    switch (getMethod(method))
+    {
+    case /* constant-expression */:
+        /* code */
+        break;
+    
+    default:
+        break;
     }
-    */
+}
 
+bool isValidVersion(std::string version){
+    if(version == "HTTP/1.1"){
+        return true;
+    }
+}
 
-
+void parseHeader(char* msg){
     //std::vector<std::string> v;
     std::stringstream ss(msg);
     std::string line;
+
+    //Header created
     
     if(getline(ss, line, '\n')){
         std::vector<std::string> v = Split(line, ' ', 2);
