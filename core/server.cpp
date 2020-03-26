@@ -1,5 +1,7 @@
 #include <iostream>
 #include <stdexcept>
+#include <string>
+#include <cstring>
 
 #include "server.h"
 #include "socket.cpp"
@@ -28,19 +30,20 @@ void Server::Listen(int port){
         char *resp;
         resp = (char *)"HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 12\n\nHello world!";
 
-        Header h;
+        Header h = Header();
         try{
             h = parseHeader(req);
         }catch(const runtime_error& e){
-            std::string serr = e.what();
-            printf("%s\n", serr.c_str());
-            resp = (char *)"HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\nContent-Length: 12\n\nInvalid Header";
+            SendErrorResponse(sock, 500, "Invalid Header");
+            continue;
         }
+
+        SendErrorResponse(sock, 200, "Hello world!");
 
         //sendErrorResponse(statuscode, message)
         //sendHTTPResponse((statuscode?), header, body)
 
-        sock.Write(resp);
+        //sock.Write(resp);
         sock.Close();
         printf("------------------Response sent-------------------\n");
     }
@@ -49,4 +52,19 @@ void Server::Listen(int port){
 }
 
 Server::~Server(){
+}
+
+void Server::SendErrorResponse(Socket sock, int statuscode, std::string message){
+    Header h = Header();
+    h.setStatusCode(statuscode);
+    h.Add("Content-Type", "text/html");
+    h.Add("Content-Length", std::to_string(message.size()));
+    std::string headerStr = h.Stringify();
+
+    std::string respStr = headerStr + message; 
+
+    char resp[respStr.size() + 1];
+    strcpy(resp, respStr.c_str());
+
+    sock.Write(resp);
 }

@@ -9,6 +9,7 @@ class Header
 {
 private:
     Method h_method;
+    int h_statuscode;
     std::string h_version, h_path;
     std::map<std::string, std::string> h_fields;
 public:
@@ -18,14 +19,20 @@ public:
     void setMethod(Method m){ h_method = m; }
     void setHTTPVersion(std::string v){ h_version = v; }
     void setFilePath(std::string p){ h_path = p; }
+    void setStatusCode(int sc){ h_statuscode = sc; }
 
     void Add(std::string field, std::string value);
     std::string Get(std::string field);
     void Remove(std::string field);
     void Clear();
+
+    std::string Stringify();
 };
 
-Header::Header(){ return; }
+Header::Header(){ 
+    Clear();
+    h_version = "HTTP/1.1";
+}
 
 Header::~Header()
 {
@@ -45,6 +52,18 @@ void Header::Remove(std::string field){
 
 void Header::Clear(){
     h_fields.clear();
+}
+
+std::string Header::Stringify(){
+    std::string headerStr;
+
+    headerStr += (h_version + " " + std::to_string(h_statuscode) + " " + StatusCodes[h_statuscode] + "\n");
+    for(auto const& x : h_fields){
+        headerStr += (x.first + ": " + x.second + "\n");
+    }
+    headerStr += "\n";
+
+    return headerStr;
 }
 
 Header parseHeader(char* msg){
