@@ -3,17 +3,16 @@
 
 #include "server.h"
 #include "socket.cpp"
+#include "../http/header.h"
 
 using namespace std;
 
 Server::Server(){
     m_running = false;
     m_socket = Socket();
-    printf("Server-Init");
 }
 
 void Server::Listen(int port){
-    printf("Socket-Listen");
     m_socket.Bind(port);
     m_socket.Listen();
     m_running = true;
@@ -26,7 +25,20 @@ void Server::Listen(int port){
         sock.Read(req);
         printf("%s\n", req);
 
-        char *resp = (char *)"HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 12\n\nHello world!";
+        char *resp;
+        resp = (char *)"HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 12\n\nHello world!";
+
+        Header h;
+        try{
+            h = parseHeader(req);
+        }catch(const runtime_error& e){
+            std::string serr = e.what();
+            printf("%s\n", serr.c_str());
+            resp = (char *)"HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\nContent-Length: 12\n\nInvalid Header";
+        }
+
+        //sendErrorResponse(statuscode, message)
+        //sendHTTPResponse((statuscode?), header, body)
 
         sock.Write(resp);
         sock.Close();
