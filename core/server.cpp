@@ -21,7 +21,6 @@ void Server::Listen(int port){
     m_running = true;
 
     while(m_running){
-        printf("\n+++++++ Waiting for new connection ++++++++\n\n");
         Socket sock = m_socket.Accept();
 
         char req[30000] = {0};
@@ -48,7 +47,6 @@ void Server::Listen(int port){
         SendHTTPResponse(sock, 200, "Hello world!");
 
         sock.Close();
-        printf("------------------Response sent-------------------\n");
     }
 
     m_socket.Close();

@@ -1,11 +1,13 @@
 #include "core/server.cpp"
+#include "core/logger.h"
 
 #define PORT 8080
 
 int main(){
     Server server = Server();
 
-    printf("Listening on port %d\n", PORT);
+    logger::error("Listening on port %d\n", PORT);
+    //printf("Listening on port %d\n", PORT);
     server.Listen(PORT); //TODO: Define Adress
 
 
