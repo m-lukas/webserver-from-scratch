@@ -34,16 +34,18 @@ void Server::Listen(int port){
         try{
             h = parseHeader(req);
         }catch(const runtime_error& e){
-            SendErrorResponse(sock, 500, "Invalid Header");
+            SendErrorResponse(sock, 500);
             continue;
         }
 
-        SendErrorResponse(sock, 200, "Hello world!");
+        /*
 
-        //sendErrorResponse(statuscode, message)
-        //sendHTTPResponse((statuscode?), header, body)
+        *** REQUEST PROCESSING
 
-        //sock.Write(resp);
+        */
+
+        SendHTTPResponse(sock, 200, "Hello world!");
+
         sock.Close();
         printf("------------------Response sent-------------------\n");
     }
@@ -54,7 +56,7 @@ void Server::Listen(int port){
 Server::~Server(){
 }
 
-void Server::SendErrorResponse(Socket sock, int statuscode, std::string message){
+void Server::SendHTTPResponse(Socket sock, int statuscode, std::string message){
     Header h = Header();
     h.setStatusCode(statuscode);
     h.Add("Content-Type", "text/html");
@@ -62,6 +64,21 @@ void Server::SendErrorResponse(Socket sock, int statuscode, std::string message)
     std::string headerStr = h.Stringify();
 
     std::string respStr = headerStr + message; 
+
+    char resp[respStr.size() + 1];
+    strcpy(resp, respStr.c_str());
+
+    sock.Write(resp);
+}
+
+void Server::SendErrorResponse(Socket sock, int statuscode){
+    Header h = Header();
+    h.setStatusCode(statuscode);
+    h.Add("Content-Type", "text/plain");
+    h.Add("Content-Length", "0");
+    std::string headerStr = h.Stringify();
+
+    std::string respStr = headerStr; 
 
     char resp[respStr.size() + 1];
     strcpy(resp, respStr.c_str());
