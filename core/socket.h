@@ -3,6 +3,10 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+enum SockOpt{
+    REUSE_ADDRESS
+};
+
 class Socket
 {
 private:
@@ -21,4 +25,5 @@ public:
     Socket Accept();
     void Read(char* req);    
     void Write(char *resp);
+    void SetOpt(SockOpt opt, int value);
 };

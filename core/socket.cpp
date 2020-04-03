@@ -10,6 +10,16 @@
 #include "socket.h"
 #include "../util.cpp"
 
+static int mapSockOpt(SockOpt opt){
+    switch (opt)
+    {
+    case REUSE_ADDRESS:
+        return SO_REUSEADDR;
+    default:
+        return 0;
+    }
+}
+
 Socket::Socket()
 {
     m_socket = (int)(socket(AF_INET, SOCK_STREAM, 0));
@@ -18,6 +28,11 @@ Socket::Socket()
 
 Socket::~Socket()
 {
+}
+
+void Socket::SetOpt(SockOpt opt, int value){
+    int err = setsockopt(m_socket, SOL_SOCKET, mapSockOpt(opt), &value, sizeof(value));
+    if(err != 0) throw std::runtime_error("cannot set socket option");
 }
 
 void Socket::Bind(int port){

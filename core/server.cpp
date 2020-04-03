@@ -15,6 +15,7 @@ Server::Server(){
 }
 
 void Server::Listen(int port){
+    m_socket.SetOpt(REUSE_ADDRESS, 1);
     m_socket.Bind(port);
     m_socket.Listen();
     m_running = true;
