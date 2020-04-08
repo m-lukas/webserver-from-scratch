@@ -2,10 +2,14 @@
 
 #include <cstdio>
 #include <stdio.h>
-#include <ctime>
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <array>
+#include <chrono>
+#include <ctime>
+#include <sstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -20,8 +24,7 @@ enum logLevel{
 };
 
 string getLogTag(logLevel lvl);
-string getConsoleTimeString();
-string getOutputTimeString();
+string getTimeString(string format);
 void writeToFile(logLevel lvl, char *buffer);
 
 struct logger
@@ -31,8 +34,10 @@ struct logger
     logger(string outputPath){
         out = ofstream(outputPath, ios_base::app);
     }
+    ~logger();
 };
 
+//logLevel ~
 logger defaultLogger = logger("log.out");
 
 string getLogTag(logLevel lvl){
@@ -83,9 +88,9 @@ template<typename... Args>
 void log(logLevel lvl, const char *msg, Args... args){
 
     //CONSULTING - How to buffer?
-    char buffer[150];
-    sprintf(buffer, msg, args...);
-    printf("%s %s %s\n", getConsoleTimeString().c_str(), getLogTag(lvl).c_str(), buffer);
+    char buffer[150]; //std::array<char, 150>
+    sprintf(buffer, msg, args...); //snprintf
+    printf("%s %s %s\n", getTimeString("%X"), getLogTag(lvl).c_str(), buffer); //printf = C Function
 
     switch (lvl)
     {
@@ -103,29 +108,25 @@ void log(logLevel lvl, const char *msg, Args... args){
     }
 }
 
-string getConsoleTimeString(){
-    char s[1000];
+string getTimeString(string format){
+    // %Y year
+    // %m year
+    // %d year
+    // %X time hh:mm:ss
 
-    time_t now = time(0);
-    tm *ltm = localtime(&now);
-    strftime(s, 1000, "%X", ltm);
+    std::array<char, 1000> s;
 
-    return s;
-}
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
 
-string getOutputTimeString(){
-    char s[1000];
-
-    time_t now = time(0);
-    tm *ltm = localtime(&now);
-    strftime(s, 1000, "%Y-%m-%d %X", ltm);
-    
-    return s;
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), format.c_str());
+    return ss.str();
 }
 
 void writeToFile(logLevel lvl, char *buffer){
     if(defaultLogger.out.is_open()){
-        defaultLogger.out << getOutputTimeString() << " " << getLogTag(lvl).c_str() << " " << buffer << "\n";
+        defaultLogger.out << getTimeString("%Y-%m-%d %X") << " " << getLogTag(lvl).c_str() << " " << buffer << "\n";
         defaultLogger.out.flush();
     }
 }
