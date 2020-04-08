@@ -5,7 +5,8 @@
 using namespace std;
 
 enum Method 
-{    
+{   
+    //TODO: Add prefix to option names 
     GET,
     POST,
     PUT,

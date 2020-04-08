@@ -2,10 +2,12 @@
 #include <stdexcept>
 #include <string>
 #include <cstring>
+#include <fstream>
 
 #include "server.h"
 #include "socket.cpp"
 #include "../http/header.h"
+#include "../logger/logger.h"
 
 using namespace std;
 
@@ -15,6 +17,10 @@ Server::Server(){
 }
 
 void Server::Listen(int port){
+
+    //CONSULTING - Where to error handle?
+
+    //exception
     m_socket.SetOpt(REUSE_ADDRESS, 1);
     m_socket.Bind(port);
     m_socket.Listen();
@@ -27,14 +33,40 @@ void Server::Listen(int port){
         sock.Read(req);
         printf("%s\n", req);
 
-        char *resp;
-        resp = (char *)"HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 12\n\nHello world!";
+        const char *resp;
+        resp = static_cast<const char *>("HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 12\n\nHello world!"); //alternativ: raw string literals
 
         Header h = Header();
+        //no exception
         try{
             h = parseHeader(req);
         }catch(const runtime_error& e){
+            logger::error(e.what());
             SendErrorResponse(sock, 500);
+            continue;
+        }
+
+        Method m = h.getMethod();
+        std::string path = h.getPath();
+
+        //printf("PATH..........................................................: %s\n", path.c_str());
+
+        std::ifstream src(path, std::ios::binary);
+        if (src) {
+            src.seekg(0, src.end);
+            int length = src.tellg();
+            src.seekg(0, src.beg);
+
+            char * buffer = new char [length];
+            src.read (buffer,length);
+
+            if(src){
+                SendHTTPResponse(sock, 200, buffer);
+            }else{
+                SendErrorResponse(sock, 500);
+            }
+
+            src.close();
             continue;
         }
 
@@ -45,19 +77,14 @@ void Server::Listen(int port){
         */
 
         SendHTTPResponse(sock, 200, "Hello world!");
-
-        sock.Close();
     }
 
     m_socket.Close();
 }
 
-Server::~Server(){
-}
-
 void Server::SendHTTPResponse(Socket sock, int statuscode, std::string message){
     Header h = Header();
-    h.setStatusCode(statuscode);
+    h.setStatus(statuscode);
     h.Add("Content-Type", "text/html");
     h.Add("Content-Length", std::to_string(message.size()));
     std::string headerStr = h.Stringify();
@@ -68,19 +95,21 @@ void Server::SendHTTPResponse(Socket sock, int statuscode, std::string message){
     strcpy(resp, respStr.c_str());
 
     sock.Write(resp);
+    sock.Close();
 }
 
 void Server::SendErrorResponse(Socket sock, int statuscode){
     Header h = Header();
-    h.setStatusCode(statuscode);
+    h.setStatus(statuscode);
     h.Add("Content-Type", "text/plain");
     h.Add("Content-Length", "0");
     std::string headerStr = h.Stringify();
 
     std::string respStr = headerStr; 
 
-    char resp[respStr.size() + 1];
+    char resp[respStr.size() + 1]; //not legal c++ (char array with dynamic size)
     strcpy(resp, respStr.c_str());
 
-    sock.Write(resp);
+    sock.Write(resp); //string_view or span
+    sock.Close();
 }

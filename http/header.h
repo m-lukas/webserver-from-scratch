@@ -17,9 +17,14 @@ public:
     ~Header();
 
     void setMethod(Method m){ h_method = m; }
-    void setHTTPVersion(std::string v){ h_version = v; }
-    void setFilePath(std::string p){ h_path = p; }
-    void setStatusCode(int sc){ h_statuscode = sc; }
+    void setVersion(std::string v){ h_version = v; }
+    void setPath(std::string p){ h_path = p; }
+    void setStatus(int sc){ h_statuscode = sc; }
+
+    Method getMethod(){ return h_method; }
+    std::string getVersion(){ return h_version; }
+    std::string getPath(){ return h_path; }
+    int getStatus(){ return h_statuscode; }
 
     void Add(std::string field, std::string value);
     std::string Get(std::string field);
@@ -81,6 +86,7 @@ Header parseHeader(char* msg){
         std::string pathStr = v.at(1);
         std::string versionStr = v.at(2);
 
+        //if(!pathStr.empty() && pathStr[0] == '/') pathStr.erase(0);
         if(!versionStr.empty() && versionStr[versionStr.size() - 1] == '\r') versionStr.erase(versionStr.size() - 1);
 
         if(!isValidVersion(versionStr)) throw std::runtime_error("invalid http version");
@@ -89,8 +95,8 @@ Header parseHeader(char* msg){
         if(method == UNKNOWN) throw std::runtime_error("invalid http method");
 
         h.setMethod(method);
-        h.setFilePath(pathStr);
-        h.setHTTPVersion(versionStr);
+        h.setPath(pathStr);
+        h.setVersion(versionStr);
     }
 
     while(getline(ss, line, '\n')){
