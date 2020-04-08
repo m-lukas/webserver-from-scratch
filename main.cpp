@@ -5,6 +5,7 @@
 
 int main(){
     Server server = Server();
+    logger::SetLevel(logger::INFO);
 
     logger::info("Listening on port %d\n", PORT);
     //logger::setLevel

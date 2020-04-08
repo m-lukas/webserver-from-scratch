@@ -27,18 +27,17 @@ string getLogTag(logLevel lvl);
 string getTimeString(string format);
 void writeToFile(logLevel lvl, char *buffer);
 
+void SetLevel(logLevel userLvl);
+
 struct logger
 {
     ofstream out;
+    logLevel logLevel;
 
-    logger(string outputPath){
-        out = ofstream(outputPath, ios_base::app);
-    }
-    ~logger();
+    logger(string outputPath, enum logLevel userLvl): out{ ofstream(outputPath, ios_base::app) }, logLevel{userLvl}  {}
 };
 
-//logLevel ~
-logger defaultLogger = logger("log.out");
+logger defaultLogger = logger("log.out", WARN);
 
 string getLogTag(logLevel lvl){
     switch (lvl)
@@ -87,10 +86,12 @@ void debug(const char *msg, Args... args){
 template<typename... Args>
 void log(logLevel lvl, const char *msg, Args... args){
 
-    //CONSULTING - How to buffer?
     char buffer[150]; //std::array<char, 150>
-    sprintf(buffer, msg, args...); //snprintf
-    printf("%s %s %s\n", getTimeString("%X"), getLogTag(lvl).c_str(), buffer); //printf = C Function
+    snprintf(buffer, 150, msg, args...);
+
+    if(lvl <= defaultLogger.logLevel){
+        printf("%s %s %s\n", getTimeString("%X").c_str(), getLogTag(lvl).c_str(), buffer); //printf = C Function
+    }
 
     switch (lvl)
     {
@@ -126,9 +127,15 @@ string getTimeString(string format){
 
 void writeToFile(logLevel lvl, char *buffer){
     if(defaultLogger.out.is_open()){
-        defaultLogger.out << getTimeString("%Y-%m-%d %X") << " " << getLogTag(lvl).c_str() << " " << buffer << "\n";
+        defaultLogger.out << getTimeString("%Y-%m-%d %X").c_str() << " " << getLogTag(lvl).c_str() << " " << buffer << "\n";
         defaultLogger.out.flush();
     }
+    return;
+}
+
+void SetLevel(logLevel userLvl){
+    defaultLogger.logLevel = userLvl;
+    return;
 }
 
 }
