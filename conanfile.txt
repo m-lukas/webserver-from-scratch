@@ -1,0 +1,5 @@
+[requires]
+libmime/0.1.2@DEGoodmanWilson/stable
+
+[generators]
+cmake

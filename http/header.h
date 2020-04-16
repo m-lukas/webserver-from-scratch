@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include "http.h"
+#include "../core/socket.h"
 
 class Header
 {
@@ -32,6 +33,7 @@ public:
     void Clear();
 
     std::string Stringify();
+    void Write(Socket sock);
 };
 
 Header::Header(){ 
@@ -71,6 +73,14 @@ std::string Header::Stringify(){
     return headerStr;
 }
 
+void Header::Write(Socket sock){
+    std::string headerStr = Stringify();
+
+    char header[1024];
+    strcpy(header, headerStr.c_str());
+    sock.Write(header);
+}
+
 Header parseHeader(char* msg){
     std::stringstream ss(msg);
     std::string line;
@@ -86,7 +96,7 @@ Header parseHeader(char* msg){
         std::string pathStr = v.at(1);
         std::string versionStr = v.at(2);
 
-        //if(!pathStr.empty() && pathStr[0] == '/') pathStr.erase(0);
+        if(!pathStr.empty() && pathStr[0] == '/') pathStr.erase(0, 1);
         if(!versionStr.empty() && versionStr[versionStr.size() - 1] == '\r') versionStr.erase(versionStr.size() - 1);
 
         if(!isValidVersion(versionStr)) throw std::runtime_error("invalid http version");

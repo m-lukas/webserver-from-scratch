@@ -4,8 +4,12 @@
 #Unignore all with extension
 !*.*
 !*/
+!Makefile
 
 # Regular Ignores
 *.out
 .vscode
 socket_old/
+build/
+*.jpg
+*.png

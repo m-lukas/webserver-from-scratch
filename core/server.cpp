@@ -3,11 +3,16 @@
 #include <string>
 #include <cstring>
 #include <fstream>
+#include <mime/mime.h>
+
+#include <unistd.h>
+#define GetCurrentDir getcwd
 
 #include "server.h"
 #include "socket.cpp"
 #include "../http/header.h"
 #include "../logger/logger.h"
+
 
 using namespace std;
 
@@ -16,14 +21,28 @@ Server::Server(){
     m_socket = Socket();
 }
 
+std::string get_current_dir() {
+   char buff[FILENAME_MAX]; //create string buffer to hold path
+   GetCurrentDir( buff, FILENAME_MAX );
+   string current_working_dir(buff);
+   return current_working_dir;
+}
+
 void Server::Listen(int port){
 
     //CONSULTING - Where to error handle?
 
-    //exception
-    m_socket.SetOpt(REUSE_ADDRESS, 1);
-    m_socket.Bind(port);
-    m_socket.Listen();
+    try
+    {
+        m_socket.SetOpt(REUSE_ADDRESS, 1);
+        m_socket.Bind(port);
+        m_socket.Listen();
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
     m_running = true;
 
     while(m_running){
@@ -49,34 +68,35 @@ void Server::Listen(int port){
         Method m = h.getMethod();
         std::string path = h.getPath();
 
-        //printf("PATH..........................................................: %s\n", path.c_str());
-
         std::ifstream src(path, std::ios::binary);
         if (src) {
             src.seekg(0, src.end);
-            int length = src.tellg();
+            int fileLength = src.tellg();
             src.seekg(0, src.beg);
 
-            char * buffer = new char [length];
-            src.read (buffer,length);
+            printf("fileLength: %d\n", fileLength);
 
-            if(src){
-                SendHTTPResponse(sock, 200, buffer);
-            }else{
-                SendErrorResponse(sock, 500);
+            Header h = Header();
+            h.setStatus(200);
+            h.Add("Content-Type", mime::lookup(path));
+            h.Add("Content-Length", std::to_string(fileLength));
+            h.Write(sock);
+
+            char * buffer = new char [CHUNKSIZE];
+            while (!src.eof())
+            {
+                memset(buffer, 0, CHUNKSIZE);
+                src.read(buffer,CHUNKSIZE);
+                std::cout << " | buffer size: " << src.gcount() << std::endl;
+                sock.Write(buffer);
             }
 
             src.close();
-            continue;
+        }else{
+            SendErrorResponse(sock, 404);
         }
 
-        /*
-
-        *** REQUEST PROCESSING
-
-        */
-
-        SendHTTPResponse(sock, 200, "Hello world!");
+        sock.Close();
     }
 
     m_socket.Close();
@@ -85,31 +105,30 @@ void Server::Listen(int port){
 void Server::SendHTTPResponse(Socket sock, int statuscode, std::string message){
     Header h = Header();
     h.setStatus(statuscode);
-    h.Add("Content-Type", "text/html");
+    h.Add("Content-Type", "text/plain");
     h.Add("Content-Length", std::to_string(message.size()));
-    std::string headerStr = h.Stringify();
+    h.Write(sock);
 
-    std::string respStr = headerStr + message; 
-
-    char resp[respStr.size() + 1];
-    strcpy(resp, respStr.c_str());
-
-    sock.Write(resp);
+    for(long min = 0; min < message.size(); min+=(CHUNKSIZE-1)){
+        char resp[CHUNKSIZE];
+        for(long i = min; i < (min+(CHUNKSIZE-1)); i++){
+            resp[i-min] = message[i];
+        }
+        sock.Write(resp);
+        memset(resp, 0, CHUNKSIZE);
+    }
+    
     sock.Close();
 }
 
 void Server::SendErrorResponse(Socket sock, int statuscode){
-    Header h = Header();
-    h.setStatus(statuscode);
-    h.Add("Content-Type", "text/plain");
-    h.Add("Content-Length", "0");
-    std::string headerStr = h.Stringify();
-
-    std::string respStr = headerStr; 
-
-    char resp[respStr.size() + 1]; //not legal c++ (char array with dynamic size)
-    strcpy(resp, respStr.c_str());
-
-    sock.Write(resp); //string_view or span
-    sock.Close();
+    SendHTTPResponse(sock, statuscode, StatusCodes[statuscode]);
 }
+
+//string_view or span > later
+//alternative error handling header parsing
+//mimetypes
+//parameter map in header
+//put file serving into seperate function
+//put message serving into seperate function
+//read req in chunks

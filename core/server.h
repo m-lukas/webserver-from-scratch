@@ -2,6 +2,8 @@
 
 #include "socket.h"
 
+#define CHUNKSIZE 1024
+
 class Server
 {
 private:

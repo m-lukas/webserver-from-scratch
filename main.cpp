@@ -11,7 +11,7 @@ int main(int argc, char* argv[]){
     }
 
     Server server = Server();
-    logger::info("Listening on port %d\n", PORT);
+    printf("Listening on port %d\n", PORT);
 
     server.Listen(PORT); //TODO: Define Adress
     return 1;
