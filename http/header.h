@@ -2,6 +2,7 @@
 
 #include <map>
 #include <stdexcept>
+#include <vector>
 
 #include "http.h"
 #include "../core/socket.h"
@@ -12,7 +13,7 @@ private:
     Method h_method;
     int h_statuscode;
     std::string h_version, h_path;
-    std::map<std::string, std::string> h_fields;
+    std::map<std::string, std::string> h_fields, h_parameters;
 public:
     Header();
     ~Header();
@@ -21,6 +22,7 @@ public:
     void setVersion(std::string v){ h_version = v; }
     void setPath(std::string p){ h_path = p; }
     void setStatus(int sc){ h_statuscode = sc; }
+    void demarshallQuery(std::string queryStr);
 
     Method getMethod(){ return h_method; }
     std::string getVersion(){ return h_version; }
@@ -61,6 +63,21 @@ void Header::Clear(){
     h_fields.clear();
 }
 
+void Header::demarshallQuery(std::string queryStr){
+    std::vector<std::string> params = Split(queryStr, '&', 100);
+    for(auto const& item: params) {
+        std::string key;
+        std::string val;
+
+        std::vector<std::string> keyVal = Split(item, '=', 1);
+        if(keyVal.size() > 1){
+            key = keyVal[0];
+            val = keyVal[1];
+        }
+        h_parameters[key] = val;
+    }
+}
+
 std::string Header::Stringify(){
     std::string headerStr;
 
@@ -96,9 +113,17 @@ Header parseHeader(char* msg){
         std::string pathStr = v.at(1);
         std::string versionStr = v.at(2);
 
-        if(!pathStr.empty() && pathStr[0] == '/') pathStr.erase(0, 1);
-        if(!versionStr.empty() && versionStr[versionStr.size() - 1] == '\r') versionStr.erase(versionStr.size() - 1);
+        if(!pathStr.empty()){
+            std::vector<std::string> pathParts = Split(pathStr, '?', 1);
+            if(pathParts.size() > 1){
+                h.demarshallQuery(pathParts[1]); //pathParts[1] = query string
+                pathStr = pathParts[0];
+            } 
 
+            if(pathStr[0] == '/') pathStr.erase(0, 1);
+        }
+
+        if(!versionStr.empty() && versionStr[versionStr.size() - 1] == '\r') versionStr.erase(versionStr.size() - 1);
         if(!isValidVersion(versionStr)) throw std::runtime_error("invalid http version");
 
         Method method = getMethod(methodStr);
