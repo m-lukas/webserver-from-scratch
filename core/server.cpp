@@ -5,9 +5,6 @@
 #include <fstream>
 #include <mime/mime.h>
 
-#include <unistd.h>
-#define GetCurrentDir getcwd
-
 #include "server.h"
 #include "socket.cpp"
 #include "../http/header.h"
@@ -19,13 +16,6 @@ using namespace std;
 Server::Server(){
     m_running = false;
     m_socket = Socket();
-}
-
-std::string get_current_dir() {
-   char buff[FILENAME_MAX]; //create string buffer to hold path
-   GetCurrentDir( buff, FILENAME_MAX );
-   string current_working_dir(buff);
-   return current_working_dir;
 }
 
 void Server::Listen(int port){
@@ -52,9 +42,6 @@ void Server::Listen(int port){
         sock.Read(req);
         printf("%s\n", req);
 
-        const char *resp;
-        resp = static_cast<const char *>("HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 12\n\nHello world!"); //alternativ: raw string literals
-
         Header h = Header();
         //no exception
         try{
@@ -74,12 +61,11 @@ void Server::Listen(int port){
             int fileLength = src.tellg();
             src.seekg(0, src.beg);
 
-            printf("fileLength: %d\n", fileLength);
-
             Header h = Header();
             h.setStatus(200);
             h.Add("Content-Type", mime::lookup(path));
             h.Add("Content-Length", std::to_string(fileLength));
+            h.Add("Connection", "keep-alive");
             h.Write(sock);
 
             char * buffer = new char [CHUNKSIZE];
@@ -87,8 +73,8 @@ void Server::Listen(int port){
             {
                 memset(buffer, 0, CHUNKSIZE);
                 src.read(buffer,CHUNKSIZE);
-                std::cout << " | buffer size: " << src.gcount() << std::endl;
-                sock.Write(buffer);
+                std::streamsize dataSize = src.gcount();
+                sock.Write(buffer, dataSize);
             }
 
             src.close();
@@ -114,8 +100,8 @@ void Server::SendHTTPResponse(Socket sock, int statuscode, std::string message){
         for(long i = min; i < (min+(CHUNKSIZE-1)); i++){
             resp[i-min] = message[i];
         }
-        sock.Write(resp);
-        memset(resp, 0, CHUNKSIZE);
+        sock.Write(resp, CHUNKSIZE);
+        memset(resp, 0, strlen(resp));
     }
     
     sock.Close();

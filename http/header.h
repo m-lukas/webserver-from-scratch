@@ -78,7 +78,7 @@ void Header::Write(Socket sock){
 
     char header[1024];
     strcpy(header, headerStr.c_str());
-    sock.Write(header);
+    sock.Write(header, strlen(header));
 }
 
 Header parseHeader(char* msg){

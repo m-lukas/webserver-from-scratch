@@ -24,6 +24,6 @@ public:
     void Listen();
     Socket Accept();
     void Read(char* req);    
-    void Write(char *resp);
+    void Write(char *resp, size_t length);
     void SetOpt(SockOpt opt, int value);
 };

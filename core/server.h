@@ -2,7 +2,7 @@
 
 #include "socket.h"
 
-#define CHUNKSIZE 1024
+#define CHUNKSIZE 16*1024
 
 class Server
 {

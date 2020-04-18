@@ -68,8 +68,8 @@ void Socket::Read(char* req){
     if(valread < 0) throw std::runtime_error("no bytes to read");
 }
 
-void Socket::Write(char *resp){
-    write(m_socket, resp, strlen(resp));
+void Socket::Write(char *resp, size_t length){
+    write(m_socket, resp, length);
 }
 
 void Socket::Close()
