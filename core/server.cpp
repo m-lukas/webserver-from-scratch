@@ -113,7 +113,5 @@ void Server::SendErrorResponse(Socket sock, int statuscode){
 
 //string_view or span > later
 //alternative error handling header parsing
-//parameter map in header
 //put file serving into seperate function
 //put message serving into seperate function
-//read req in chunks

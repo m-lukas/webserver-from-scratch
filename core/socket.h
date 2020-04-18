@@ -17,6 +17,15 @@ private:
     explicit Socket(int socket, sockaddr_in address, int port) : m_socket(socket), m_address(address), m_port(port) {};
 public:
     Socket();
+    Socket(Socket&& s) : m_socket{s.m_socket} {};
+    Socket(const Socket& s) : m_socket{s.m_socket} {};
+    Socket& operator=(Socket&& s) {
+        if (&s != this) {
+            m_socket = s.m_socket;
+            s.m_socket = 0;
+        }
+        return *this;
+    };
     ~Socket();
 
     void Bind(int port);

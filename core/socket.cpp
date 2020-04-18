@@ -28,6 +28,7 @@ Socket::Socket()
 
 Socket::~Socket()
 {
+    //close(m_socket); //Gets triggered after request reading (outside of try block)
 }
 
 void Socket::SetOpt(SockOpt opt, int value){
