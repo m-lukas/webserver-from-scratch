@@ -18,9 +18,11 @@ Server::Server(){
     m_socket = Socket();
 }
 
-void Server::Listen(int port){
+void Server::Stop(){
+    m_running = false;
+}
 
-    //CONSULTING - Where to error handle?
+void Server::Listen(int port){
 
     try
     {
@@ -30,7 +32,8 @@ void Server::Listen(int port){
     }
     catch(const std::exception& e)
     {
-        std::cerr << e.what() << '\n';
+        logger::error(e.what());
+        return;
     }
     
     m_running = true;
@@ -43,11 +46,9 @@ void Server::Listen(int port){
         printf("%s\n", req);
 
         Header h = Header();
-        //no exception
-        try{
-            h = parseHeader(req);
-        }catch(const runtime_error& e){
-            logger::error(e.what());
+        auto err = h.ParseHeader(req);
+        if(err != 0) {
+            logger::debug("Header Parsing Failed");
             SendErrorResponse(sock, 500);
             continue;
         }
@@ -112,6 +113,8 @@ void Server::SendErrorResponse(Socket sock, int statuscode){
 }
 
 //string_view or span > later
+
 //alternative error handling header parsing
+
 //put file serving into seperate function
 //put message serving into seperate function

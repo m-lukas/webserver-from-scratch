@@ -16,4 +16,5 @@ public:
     void SendHTTPResponse(Socket sock, int statuscode, std::string message);
 
     void Listen(int port);
+    void Stop();
 };

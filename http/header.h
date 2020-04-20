@@ -34,6 +34,8 @@ public:
     void Remove(std::string field);
     void Clear();
 
+    int ParseHeader(char* msg);
+
     std::string Stringify();
     void Write(Socket sock);
 };
@@ -98,16 +100,15 @@ void Header::Write(Socket sock){
     sock.Write(header, strlen(header));
 }
 
-Header parseHeader(char* msg){
+int Header::ParseHeader(char* msg){
     std::stringstream ss(msg);
     std::string line;
 
-    Header h = Header();
-    h.Clear();
+    Clear();
     
     if(getline(ss, line, '\n')){
         std::vector<std::string> v = Split(line, ' ', 2);
-        if(v.size() != 3) throw std::runtime_error("invalid header");
+        if(v.size() != 3) return -1; //invalid header structure
 
         std::string methodStr = v.at(0);
         std::string pathStr = v.at(1);
@@ -116,7 +117,7 @@ Header parseHeader(char* msg){
         if(!pathStr.empty()){
             std::vector<std::string> pathParts = Split(pathStr, '?', 1);
             if(pathParts.size() > 1){
-                h.demarshallQuery(pathParts[1]); //pathParts[1] = query string
+                demarshallQuery(pathParts[1]); //pathParts[1] = query string
                 pathStr = pathParts[0];
             } 
 
@@ -124,14 +125,14 @@ Header parseHeader(char* msg){
         }
 
         if(!versionStr.empty() && versionStr[versionStr.size() - 1] == '\r') versionStr.erase(versionStr.size() - 1);
-        if(!isValidVersion(versionStr)) throw std::runtime_error("invalid http version");
+        if(!isValidVersion(versionStr)) return -2; //invalid http version
 
-        Method method = getMethod(methodStr);
-        if(method == UNKNOWN) throw std::runtime_error("invalid http method");
+        Method method = ::getMethod(methodStr);
+        if(method == UNKNOWN) return -3; //unknown http method
 
-        h.setMethod(method);
-        h.setPath(pathStr);
-        h.setVersion(versionStr);
+        setMethod(method);
+        setPath(pathStr);
+        setVersion(versionStr);
     }
 
     while(getline(ss, line, '\n')){
@@ -140,17 +141,17 @@ Header parseHeader(char* msg){
         }
 
         std::vector<std::string> v = Split(line, ':', 1);
-        if(v.size() != 2) throw std::runtime_error("invalid header");
+        if(v.size() != 2) return -4;
 
         std::string field = v.at(0);
         std::string value = v.at(1);
 
         if(!value.empty() && value[value.size() - 1] == '\r') value.erase(value.size() - 1);
 
-        h.Add(field, value);
+        Add(field, value);
     }
 
-    return h;
+    return 0;
 }
 
 

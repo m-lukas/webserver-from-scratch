@@ -5,5 +5,8 @@ setup:
 compile:
 	cmake --build ./build -v
 
-start:
+run:
 	./build/bin/main
+
+run-client:
+	./client/client
