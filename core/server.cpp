@@ -7,6 +7,7 @@
 
 #include "server.h"
 #include "socket.cpp"
+#include "../http/request.h"
 #include "../http/header.h"
 #include "../logger/logger.h"
 
@@ -41,17 +42,19 @@ void Server::Listen(int port){
     while(m_running){
         Socket sock = m_socket.Accept();
 
-        char req[30000] = {0};
-        sock.Read(req);
-        printf("%s\n", req);
+        char msg[30000] = {0};
+        sock.Read(msg);
+        printf("%s\n", msg);
 
-        Header h = Header();
-        auto err = h.ParseHeader(req);
+        Request req = Request();
+        auto err = req.Parse(msg);
         if(err != 0) {
-            logger::debug("Header Parsing Failed");
+            logger::debug("Request Parsing Failed");
             SendErrorResponse(sock, 500);
             continue;
         }
+
+        Header h = req.getHeader();
 
         Method m = h.getMethod();
         std::string path = h.getPath();
@@ -114,7 +117,9 @@ void Server::SendErrorResponse(Socket sock, int statuscode){
 
 //string_view or span > later
 
-//alternative error handling header parsing
-
 //put file serving into seperate function
 //put message serving into seperate function
+//index.html redirection
+//static routes
+//read resources for LU
+//Look into async request handling
