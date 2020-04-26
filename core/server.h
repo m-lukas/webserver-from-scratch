@@ -1,20 +1,25 @@
 #pragma once
 
-#include "socket.h"
+#include <functional>
+#include <map>
 
-#define CHUNKSIZE 16*1024
+#include "socket.h"
+#include "../http/request.h"
+#include "../http/response.h"
 
 class Server
 {
 private:
     bool m_running;
     Socket m_socket;
+    std::map<std::string, std::function<int(Request, Response)>> m_routes;
 public:
     Server();
 
-    void SendErrorResponse(Socket sock, int statuscode);
-    void SendHTTPResponse(Socket sock, int statuscode, std::string message);
+    void Route(std::string path, std::function<int(Request, Response)> func);
 
     void Listen(int port);
     void Stop();
+
+    void handleRequest(Request req, Response resp);
 };

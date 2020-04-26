@@ -2,7 +2,7 @@
 
 #include <map>
 
-using namespace std;
+#define CHUNKSIZE 16*1024
 
 enum Method 
 {   
@@ -91,7 +91,7 @@ std::map<int, std::string> StatusCodes = {
 };
 
 
-Method getMethod(string method){
+Method getMethod(std::string method){
     if(method == "GET") return GET;
     if(method == "POST") return POST;
     if(method == "PUT") return PUT;
@@ -105,7 +105,7 @@ Method getMethod(string method){
     return UNKNOWN;
 }
 
-bool isValidVersion(string version){
+bool isValidVersion(std::string version){
     if(version == "HTTP/1.1"){
         return true;
     }

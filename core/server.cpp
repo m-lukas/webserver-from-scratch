@@ -1,18 +1,17 @@
+#pragma once
+
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <cstring>
-#include <fstream>
-#include <mime/mime.h>
+#include <map>
 
 #include "server.h"
 #include "socket.cpp"
 #include "../http/request.h"
+#include "../http/response.h"
 #include "../http/header.h"
 #include "../logger/logger.h"
-
-
-using namespace std;
 
 Server::Server(){
     m_running = false;
@@ -22,6 +21,11 @@ Server::Server(){
 void Server::Stop(){
     m_running = false;
 }
+
+void Server::Route(std::string path, std::function<int(Request, Response)> func){
+    if(path[0] == '/') path.erase(0, 1);
+    m_routes[path] = func;
+};
 
 void Server::Listen(int port){
 
@@ -42,84 +46,47 @@ void Server::Listen(int port){
     while(m_running){
         Socket sock = m_socket.Accept();
 
-        char msg[30000] = {0};
-        sock.Read(msg);
-        printf("%s\n", msg);
+        Request req = Request(sock);
+        Response resp = Response(sock);
 
-        Request req = Request();
-        auto err = req.Parse(msg);
+        req.Read();
+        
+        auto err = req.Parse();
         if(err != 0) {
             logger::debug("Request Parsing Failed");
-            SendErrorResponse(sock, 500);
+            resp.Status(500)->Error();
             continue;
         }
 
-        Header h = req.getHeader();
+        handleRequest(req, resp);
 
-        Method m = h.getMethod();
-        std::string path = h.getPath();
-
-        std::ifstream src(path, std::ios::binary);
-        if (src) {
-            src.seekg(0, src.end);
-            int fileLength = src.tellg();
-            src.seekg(0, src.beg);
-
-            Header h = Header();
-            h.setStatus(200);
-            h.Add("Content-Type", mime::lookup(path));
-            h.Add("Content-Length", std::to_string(fileLength));
-            h.Add("Connection", "keep-alive");
-            h.Write(sock);
-
-            char * buffer = new char [CHUNKSIZE];
-            while (!src.eof())
-            {
-                memset(buffer, 0, CHUNKSIZE);
-                src.read(buffer,CHUNKSIZE);
-                std::streamsize dataSize = src.gcount();
-                sock.Write(buffer, dataSize);
-            }
-
-            src.close();
-        }else{
-            SendErrorResponse(sock, 404);
-        }
-
-        sock.Close();
+        //sock.Close();
     }
 
     m_socket.Close();
 }
 
-void Server::SendHTTPResponse(Socket sock, int statuscode, std::string message){
-    Header h = Header();
-    h.setStatus(statuscode);
-    h.Add("Content-Type", "text/plain");
-    h.Add("Content-Length", std::to_string(message.size()));
-    h.Write(sock);
+void Server::handleRequest(Request req, Response resp){
+    Method method = req.getHeader().getMethod();
+    std::string path = req.getHeader().getPath();
 
-    for(long min = 0; min < message.size(); min+=(CHUNKSIZE-1)){
-        char resp[CHUNKSIZE];
-        for(long i = min; i < (min+(CHUNKSIZE-1)); i++){
-            resp[i-min] = message[i];
-        }
-        sock.Write(resp, CHUNKSIZE);
-        memset(resp, 0, strlen(resp));
+    switch (method)
+    {
+    case GET:
+        if(m_routes.count(path) == 1) m_routes[path](req, resp);
+        break;
+    default:
+        resp.Status(501)->Error();
+        break;
     }
-    
-    sock.Close();
-}
 
-void Server::SendErrorResponse(Socket sock, int statuscode){
-    SendHTTPResponse(sock, statuscode, StatusCodes[statuscode]);
+    return;
 }
 
 //string_view or span > later
 
-//put file serving into seperate function
-//put message serving into seperate function
 //index.html redirection
 //static routes
 //read resources for LU
 //Look into async request handling
+//create custom writer to simplify writing stuff

@@ -1,26 +1,38 @@
 #pragma once
 
 #include "header.h"
+#include "../core/socket.h"
+#include "../util.cpp"
+#include "http.h"
 
 class Request
 {
 private:
     Header r_header;
     std::string r_body;
+    Socket r_socket;
+    char r_raw[30000];
 public:
-    Request();
+    Request(Socket sock) : r_socket(sock) {
+        r_header = Header();
+    };
 
     Header getHeader() { return r_header; }
     std::string getBody() { return r_body; }
 
-    int Parse(char* msg);
+    void Read();
+    int Parse();
 };
 
-Request::Request(){
-    r_header = Header();
+void Request::Read(){
+    memset(r_raw, 0, strlen(r_raw));
+    r_socket.Read(r_raw);
+    printf("%s\n", r_raw);
 }
 
-int Request::Parse(char* msg){
+int Request::Parse(){
+    const char *msg = const_cast<const char*>(r_raw);
+
     std::stringstream ss(msg);
     std::string line;
     int contentLength;
@@ -77,7 +89,7 @@ int Request::Parse(char* msg){
     }
 
     if(contentLength < strlen(msg)){
-        r_body = ss.str().substr(contentLength, string::npos);
+        r_body = ss.str().substr(contentLength, std::string::npos);
     }
     return 0;
 }

@@ -6,6 +6,7 @@
 
 #include "http.h"
 #include "../core/socket.h"
+#include "../util.cpp"
 
 class Header
 {
