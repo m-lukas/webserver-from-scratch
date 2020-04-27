@@ -83,4 +83,6 @@ void Response::SendFile(std::string path){
     }else{
         Status(404)->Error();
     }
+
+    r_socket.Close();
 }

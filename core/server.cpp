@@ -73,7 +73,11 @@ void Server::handleRequest(Request req, Response resp){
     switch (method)
     {
     case GET:
-        if(m_routes.count(path) == 1) m_routes[path](req, resp);
+        if(m_routes.count(path) == 1){
+            m_routes[path](req, resp);
+        }else{
+            resp.SendFile(path);
+        }
         break;
     default:
         resp.Status(501)->Error();

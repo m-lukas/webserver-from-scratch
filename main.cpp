@@ -1,7 +1,7 @@
 #include "core/server.cpp"
 #include "logger/logger.h"
 
-#include "routes/admin.cpp"
+#include "routes/general.cpp"
 
 #define PORT 8080
 
@@ -15,7 +15,7 @@ int main(int argc, char* argv[]){
     Server server = Server();
     printf("Listening on port %d\n", PORT);
 
-    server.Route("/hello", f_getHello);
+    server.Route("/", f_getIndex);
 
     server.Listen(PORT); //TODO: Define Adress
     return 1;
