@@ -60,7 +60,7 @@ void Server::Listen(int port){
 
         handleRequest(req, resp);
 
-        //sock.Close();
+        sock.Close();
     }
 
     m_socket.Close();
@@ -87,10 +87,7 @@ void Server::handleRequest(Request req, Response resp){
     return;
 }
 
-//string_view or span > later
-
-//index.html redirection
-//static routes
+//server.cpp debug log timer -> how long does the serving take?
 //read resources for LU
 //Look into async request handling
 //create custom writer to simplify writing stuff

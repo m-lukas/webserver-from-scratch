@@ -53,8 +53,8 @@ void Response::Send(std::string message){
         r_socket.Write(resp, CHUNKSIZE);
         memset(resp, 0, strlen(resp));
     }
-    
-    r_socket.Close();
+
+    return;
 }
 
 void Response::SendFile(std::string path){
@@ -84,5 +84,5 @@ void Response::SendFile(std::string path){
         Status(404)->Error();
     }
 
-    r_socket.Close();
+    return;
 }
