@@ -49,6 +49,8 @@ void Server::Listen(int port){
     while(m_running){
         Socket sock = m_socket.Accept();
 
+        fork();
+
         auto startTime = std::chrono::high_resolution_clock::now();
 
         Request req = Request(sock);
