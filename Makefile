@@ -8,5 +8,8 @@ compile:
 run:
 	./build/bin/main
 
+run-verbose:
+	./build/bin/main -v
+
 run-client:
 	./client/client

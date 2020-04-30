@@ -5,6 +5,9 @@
 #include <string>
 #include <cstring>
 #include <map>
+#include <chrono>
+#include <stdio.h> 
+#include <sys/types.h> 
 
 #include "server.h"
 #include "socket.cpp"
@@ -46,6 +49,8 @@ void Server::Listen(int port){
     while(m_running){
         Socket sock = m_socket.Accept();
 
+        auto startTime = std::chrono::high_resolution_clock::now();
+
         Request req = Request(sock);
         Response resp = Response(sock);
 
@@ -59,6 +64,10 @@ void Server::Listen(int port){
         }
 
         handleRequest(req, resp);
+
+        auto endTime = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = endTime - startTime;
+        logger::debug("Elapsed Time: %fs", elapsed.count());
 
         sock.Close();
     }
@@ -87,7 +96,6 @@ void Server::handleRequest(Request req, Response resp){
     return;
 }
 
-//server.cpp debug log timer -> how long does the serving take?
 //read resources for LU
 //Look into async request handling
 //create custom writer to simplify writing stuff
