@@ -7,7 +7,8 @@
 #include <map>
 #include <chrono>
 #include <stdio.h> 
-#include <sys/types.h> 
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "server.h"
 #include "socket.cpp"
@@ -48,30 +49,38 @@ void Server::Listen(int port){
 
     while(m_running){
         Socket sock = m_socket.Accept();
+        auto pid = fork();
 
-        fork();
+        if(pid != 0){ //parent
+            sock.Close(); //close parent copy
+        }else{
+            m_socket.Close();
 
-        auto startTime = std::chrono::high_resolution_clock::now();
+            auto startTime = std::chrono::high_resolution_clock::now();
 
-        Request req = Request(sock);
-        Response resp = Response(sock);
+            Request req = Request(sock);
+            Response resp = Response(sock);
 
-        req.Read();
-        
-        auto err = req.Parse();
-        if(err != 0) {
-            logger::debug("Request Parsing Failed");
-            resp.Status(500)->Error();
-            continue;
-        }
+            req.Read();
+            
+            auto err = req.Parse();
+            if(err != 0) {
+                logger::debug("Request Parsing Failed");
+                resp.Status(500)->Error();
+                continue;
+            }
 
-        handleRequest(req, resp);
+            handleRequest(req, resp);
 
-        auto endTime = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = endTime - startTime;
-        logger::debug("Elapsed Time: %fs", elapsed.count());
+            auto endTime = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = endTime - startTime;
+            logger::debug("Elapsed Time: %fs", elapsed.count());
 
-        sock.Close();
+            sleep(30);
+            sock.Close();
+
+            exit(0);
+        }      
     }
 
     m_socket.Close();

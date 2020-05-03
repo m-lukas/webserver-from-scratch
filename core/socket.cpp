@@ -22,6 +22,7 @@ static int mapSockOpt(SockOpt opt){
 
 Socket::Socket()
 {
+    //m_socket = "file descriptor" (always positive integer) (https://ruslanspivak.com/lsbaws-part3/)
     m_socket = (int)(socket(AF_INET, SOCK_STREAM, 0));
     if(m_socket == 0) throw std::runtime_error("cannot create socket");
 }
