@@ -21,5 +21,5 @@ public:
     void Listen(int port);
     void Stop();
 
-    void handleRequest(Request req, Response resp);
+    void handleRequest(Socket sock);
 };

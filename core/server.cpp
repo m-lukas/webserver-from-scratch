@@ -7,10 +7,12 @@
 #include <map>
 #include <chrono>
 #include <stdio.h> 
-#include <sys/types.h> 
+#include <sys/types.h>
+#include <thread>
 
 #include "server.h"
 #include "socket.cpp"
+#include "threadpool.h"
 #include "../http/request.h"
 #include "../http/response.h"
 #include "../http/header.h"
@@ -45,37 +47,34 @@ void Server::Listen(int port){
     }
     
     m_running = true;
+    ThreadPool workers{10};
 
     while(m_running){
         Socket sock = m_socket.Accept();
 
-        auto startTime = std::chrono::high_resolution_clock::now();
-
-        Request req = Request(sock);
-        Response resp = Response(sock);
-
-        req.Read();
-        
-        auto err = req.Parse();
-        if(err != 0) {
-            logger::debug("Request Parsing Failed");
-            resp.Status(500)->Error();
-            continue;
-        }
-
-        handleRequest(req, resp);
-
-        auto endTime = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = endTime - startTime;
-        logger::debug("Elapsed Time: %fs", elapsed.count());
-
-        sock.Close();
+        workers.Add([this, &sock] {
+            this->handleRequest(sock);
+        });
     }
 
     m_socket.Close();
 }
 
-void Server::handleRequest(Request req, Response resp){
+void Server::handleRequest(Socket sock){
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    Request req = Request(sock);
+    Response resp = Response(sock);
+
+    req.Read();
+    
+    auto err = req.Parse();
+    if(err != 0) {
+        logger::debug("Request Parsing Failed");
+        resp.Status(500)->Error();
+        return;
+    }
+
     Method method = req.getHeader().getMethod();
     std::string path = req.getHeader().getPath();
 
@@ -93,9 +92,11 @@ void Server::handleRequest(Request req, Response resp){
         break;
     }
 
+    auto endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = endTime - startTime;
+    logger::debug("Elapsed Time: %fs", elapsed.count());
+
+    sock.Close();
+
     return;
 }
-
-//read resources for LU
-//Look into async request handling
-//create custom writer to simplify writing stuff
