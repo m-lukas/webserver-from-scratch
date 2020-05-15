@@ -32,11 +32,16 @@ void Server::Route(std::string path, std::function<int(Request, Response)> func)
     m_routes[path] = func;
 };
 
+void Server::SetName(std::string name){
+    m_name = name;
+}
+
 void Server::Listen(int port){
 
     try
     {
         m_socket.SetOpt(REUSE_ADDRESS, 1);
+        m_socket.SetTimeout(10);
         m_socket.Bind(port);
         m_socket.Listen();
     }
@@ -50,7 +55,9 @@ void Server::Listen(int port){
     ThreadPool workers{10};
 
     while(m_running){
+        printf("Waiting for Request\n");
         Socket sock = m_socket.Accept();
+        if(sock.InvalidDescriptor()) continue;
 
         workers.Add([this, &sock] {
             this->handleRequest(sock);
@@ -60,13 +67,17 @@ void Server::Listen(int port){
     m_socket.Close();
 }
 
-void Server::handleRequest(Socket sock){
+void Server::handleRequest(Socket acceptSock){
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    Request req = Request(sock);
-    Response resp = Response(sock);
+    Request req = Request(acceptSock);
+    Response resp = Response(acceptSock, GetServerName());
 
-    req.Read();
+    auto valread = req.Read();
+    if(valread < 0){
+        acceptSock.Close();
+        return;
+    }
     
     auto err = req.Parse();
     if(err != 0) {
@@ -77,12 +88,15 @@ void Server::handleRequest(Socket sock){
 
     Method method = req.getHeader().getMethod();
     std::string path = req.getHeader().getPath();
+    auto iter = m_routes.find(path);
+
+    printf("Handling Request: %s\n", path.c_str());
 
     switch (method)
     {
     case GET:
-        if(m_routes.count(path) == 1){
-            m_routes[path](req, resp);
+        if(iter != m_routes.end()){
+            iter->second(req,resp);
         }else{
             resp.SendFile(path);
         }
@@ -96,7 +110,20 @@ void Server::handleRequest(Socket sock){
     std::chrono::duration<double> elapsed = endTime - startTime;
     logger::debug("Elapsed Time: %fs", elapsed.count());
 
-    sock.Close();
+    acceptSock.Close();
+
+    printf("Finished Request\n");
+    printf("----------------------------\n");
 
     return;
 }
+
+// ServerName / Date in header
+// Configuration - via Main or Config (optional config file path)
+// Different Listen functions (Fork, Threadpool, Single Thread)
+// ThreadPool as part of Server Class -> stopping both
+// Analyze/Understand ThreadPool functioning
+// Gracefull Shutdown
+// How does Cors work? - MiddleWare integration
+// Cleaning up the Code - Something to refactor?
+// Redirect - How I can refactor routes?

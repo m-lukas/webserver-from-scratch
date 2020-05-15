@@ -3,8 +3,11 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include "../logger/logger.h"
+
 enum SockOpt{
-    REUSE_ADDRESS
+    REUSE_ADDRESS,
+    TIMEOUT
 };
 
 class Socket
@@ -32,7 +35,9 @@ public:
     void Close();
     void Listen();
     Socket Accept();
-    void Read(char* req);    
+    long Read(char* req);    
     void Write(char *resp, size_t length);
     void SetOpt(SockOpt opt, int value);
+    void SetTimeout(int seconds);
+    bool InvalidDescriptor();
 };

@@ -4,6 +4,7 @@
 #include "routes/general.cpp"
 
 #define PORT 8080
+#define NAME "lukas's server"
 
 int main(int argc, char* argv[]){
     if(argc > 1){
@@ -15,7 +16,9 @@ int main(int argc, char* argv[]){
     Server server = Server();
     printf("Listening on port %d\n", PORT);
 
-    server.Route("/", f_getIndex);
+    server.SetName(NAME);
+    server.Route("/", getIndex);
+    server.Route("/hello", getHello);
 
     server.Listen(PORT); //TODO: Define Adress
     return 1;

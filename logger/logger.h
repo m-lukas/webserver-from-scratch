@@ -11,6 +11,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include "../util.cpp"
+
 using namespace std;
 
 namespace logger {
@@ -90,7 +92,7 @@ void log(logLevel lvl, const char *msg, Args... args){
     snprintf(buffer, 150, msg, args...);
 
     if(lvl <= defaultLogger.logLevel){
-        printf("%s %s %s\n", getTimeString("%X").c_str(), getLogTag(lvl).c_str(), buffer); //printf = C Function
+        printf("%s %s %s\n", util::GetTimeString("%X").c_str(), getLogTag(lvl).c_str(), buffer); //printf = C Function
     }
 
     switch (lvl)
@@ -109,25 +111,9 @@ void log(logLevel lvl, const char *msg, Args... args){
     }
 }
 
-string getTimeString(string format){
-    // %Y year
-    // %m year
-    // %d year
-    // %X time hh:mm:ss
-
-    std::array<char, 1000> s;
-
-    auto now = std::chrono::system_clock::now();
-    auto in_time_t = std::chrono::system_clock::to_time_t(now);
-
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&in_time_t), format.c_str());
-    return ss.str();
-}
-
 void writeToFile(logLevel lvl, char *buffer){
     if(defaultLogger.out.is_open()){
-        defaultLogger.out << getTimeString("%Y-%m-%d %X").c_str() << " " << getLogTag(lvl).c_str() << " " << buffer << "\n";
+        defaultLogger.out << util::GetTimeString("%Y-%m-%d %X").c_str() << " " << getLogTag(lvl).c_str() << " " << buffer << "\n";
         defaultLogger.out.flush();
     }
     return;

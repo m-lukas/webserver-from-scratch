@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "http.h"
-#include "../core/socket.h"
+#include "../core/socket.hpp"
 #include "../util.cpp"
 
 class Header
@@ -65,12 +65,12 @@ void Header::Clear(){
 }
 
 void Header::demarshallQuery(std::string queryStr){
-    std::vector<std::string> params = Split(queryStr, '&', 100);
+    std::vector<std::string> params = util::Split(queryStr, '&', 100);
     for(auto const& item: params) {
         std::string key;
         std::string val;
 
-        std::vector<std::string> keyVal = Split(item, '=', 1);
+        std::vector<std::string> keyVal = util::Split(item, '=', 1);
         if(keyVal.size() > 1){
             key = keyVal[0];
             val = keyVal[1];

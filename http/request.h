@@ -1,7 +1,7 @@
 #pragma once
 
 #include "header.h"
-#include "../core/socket.h"
+#include "../core/socket.hpp"
 #include "../util.cpp"
 #include "http.h"
 
@@ -20,14 +20,15 @@ public:
     Header getHeader() { return r_header; }
     std::string getBody() { return r_body; }
 
-    void Read();
+    long Read();
     int Parse();
 };
 
-void Request::Read(){
-    memset(r_raw, 0, strlen(r_raw));
-    r_socket.Read(r_raw);
-    printf("%s\n", r_raw);
+long Request::Read(){
+    memset(r_raw, 0, 30000);
+    long valread = r_socket.Read(r_raw);
+    //printf("%s\n", r_raw);
+    return valread;
 }
 
 int Request::Parse(){
@@ -42,7 +43,7 @@ int Request::Parse(){
     if(getline(ss, line, '\n')){
         contentLength += line.size()+1;
 
-        std::vector<std::string> v = Split(line, ' ', 2);
+        std::vector<std::string> v = util::Split(line, ' ', 2);
         if(v.size() != 3) return -1; //invalid header structure
 
         std::string methodStr = v.at(0);
@@ -50,7 +51,7 @@ int Request::Parse(){
         std::string versionStr = v.at(2);
 
         if(!pathStr.empty()){
-            std::vector<std::string> pathParts = Split(pathStr, '?', 1);
+            std::vector<std::string> pathParts = util::Split(pathStr, '?', 1);
             if(pathParts.size() > 1){
                 r_header.demarshallQuery(pathParts[1]); //pathParts[1] = query string
                 pathStr = pathParts[0];
@@ -77,7 +78,7 @@ int Request::Parse(){
             break; //end of header
         }
 
-        std::vector<std::string> v = Split(line, ':', 1);
+        std::vector<std::string> v = util::Split(line, ':', 1);
         if(v.size() != 2) return -4;
 
         std::string field = v.at(0);

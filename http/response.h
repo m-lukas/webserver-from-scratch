@@ -2,18 +2,25 @@
 
 #include <fstream>
 #include <mime/mime.h>
+#include <chrono>
+#include <ctime>
+#include <sstream>
+#include <array>
+#include <iomanip>
 
 #include "header.h"
 #include "../core/server.cpp"
 #include "http.h"
+#include "../util.cpp"
 
 class Response
 {
 private:
     Header r_header;
     Socket r_socket;
+    std::string r_server;
 public:
-    Response(Socket sock) : r_socket(sock) {
+    Response(Socket sock, std::string server) : r_socket(sock), r_server(server) {
         r_header = Header();
         r_header.setStatus(200); //default
     };
@@ -43,6 +50,8 @@ void Response::Error(){
 void Response::Send(std::string message){
     r_header.Add("Content-Type", "text/plain");
     r_header.Add("Content-Length", std::to_string(message.size()));
+    r_header.Add("Date", util::GetTimeString("%a, %e %b %Y %X %Z"));
+    if(r_server != ""){ r_header.Add("Server", r_server); }
     r_header.Write(r_socket);
 
     for(long min = 0; min < message.size(); min+=(CHUNKSIZE-1)){
@@ -60,6 +69,8 @@ void Response::Send(std::string message){
 void Response::SendFile(std::string path){
     std::ifstream src(path, std::ios::binary);
     if (src) {
+        printf("Sending File: %s\n", path.c_str());
+
         src.seekg(0, src.end);
         int fileLength = src.tellg();
         src.seekg(0, src.beg);
@@ -68,6 +79,8 @@ void Response::SendFile(std::string path){
         r_header.Add("Content-Type", mime::lookup(path));
         r_header.Add("Content-Length", std::to_string(fileLength));
         r_header.Add("Connection", "keep-alive");
+        r_header.Add("Date", util::GetTimeString("%a, %e %b %Y %X %Z"));
+        if(r_server != ""){ r_header.Add("Server", r_server); }
         r_header.Write(r_socket);
 
         char * buffer = new char [CHUNKSIZE];
