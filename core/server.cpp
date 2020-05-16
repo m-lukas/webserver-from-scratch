@@ -36,6 +36,36 @@ void Server::SetName(std::string name){
     m_name = name;
 }
 
+void Server::ListenProcess(int port){
+    try
+    {
+        m_socket.SetOpt(REUSE_ADDRESS, 1);
+        m_socket.SetTimeout(10);
+        m_socket.Bind(port);
+        m_socket.Listen();
+    }
+    catch(const std::exception& e)
+    {
+        logger::error(e.what());
+        return;
+    }
+    
+    m_running = true;
+    ThreadPool workers{10};
+
+    while(m_running){
+        printf("Waiting for Request\n");
+        Socket sock = m_socket.Accept();
+        if(sock.InvalidDescriptor()) continue;
+
+        workers.Add([this, &sock] {
+            this->handleRequest(sock);
+        });
+    }
+
+    m_socket.Close();
+}
+
 void Server::Listen(int port){
 
     try
