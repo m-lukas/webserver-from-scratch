@@ -158,7 +158,7 @@ void Server::handleRequest(Socket acceptSock){
 
     auto tid = std::this_thread::get_id();
 
-    std::cout << "Handling Request: /" << path << " on thread " << tid << std::endl;
+    logger::debug("Handling Request: /%s on thread %d", path.c_str(), tid);
 
     switch (method)
     {

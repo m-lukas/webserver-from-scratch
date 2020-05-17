@@ -13,6 +13,7 @@
 #include <condition_variable>
 #include <thread>
 #include <queue>
+#include <vector>
 
 #include "../util.cpp"
 #include "../core/threadpool.h"
@@ -31,21 +32,30 @@ enum logLevel{
 
 string getLogTag(logLevel lvl);
 string getTimeString(string format);
-void writeToFile(logLevel lvl, char *buffer);
 
 void SetLevel(logLevel userLvl);
+
+struct logMessage{
+    logLevel msgLvl;
+    std::string msg;
+
+    logMessage(){};
+    explicit logMessage(logLevel lvl, std::string s) : msgLvl{lvl}, msg{s} {};
+};
 
 struct logger
 {
     private:
         std::condition_variable mNotifyVar;
-        std::thread mlogThread;
+        vector<std::thread> mlogThread;
         std::mutex mNotifyMutex;
-        std::queue<std::string> mLogs;
+        std::queue<logMessage> mLogs;
+        bool mStopping;
 
-        void _log(std::string);
+        void _log(logMessage);
+        void writeToFile(std::string);
+
         void startLogThread();
-        void writeToFile(logLevel lvl, std::string logMsg);
     public:
         ofstream mOut;
         logLevel mLogLevel;
@@ -53,7 +63,9 @@ struct logger
         template<typename... Args>
         void log(enum logLevel lvl, const char *msg, Args... args);
 
-        logger(string outputPath, enum logLevel userLvl): mOut{ ofstream(outputPath, ios_base::app) }, mLogLevel{userLvl} {}
+        logger(string outputPath, enum logLevel userLvl): mOut{ ofstream(outputPath, ios_base::app) }, mLogLevel{userLvl} {
+            startLogThread();
+        }
 };
 
 logger defaultLogger{"log.out", WARN};
@@ -109,15 +121,14 @@ void debug(const char *msg, Args... args){
 
 template<typename... Args>
 void logger::log(logLevel lvl, const char *msg, Args... args){
-    std::string logMsg;
     char buffer[150]; //std::array<char, 150>
     snprintf(buffer, 150, msg, args...);
+    std::string bufferStr(buffer);
 
-    logMsg += util::GetTimeString("%Y-%m-%d %X");
-    logMsg += " ";
-    logMsg += getLogTag(lvl);
-    logMsg += " ";
-    logMsg += buffer;
+    std::string msgStr = util::GetTimeString("%Y-%m-%d %X") + " " + getLogTag(lvl) + " " + bufferStr;
+    logMessage logMsg{lvl, msgStr};
+
+    std::cout << "Log function running on process: " << ::getpid() << std::endl;
 
     {
         std::unique_lock<std::mutex> lock{mNotifyMutex};
@@ -128,40 +139,40 @@ void logger::log(logLevel lvl, const char *msg, Args... args){
     mNotifyVar.notify_one();
 }
 
-void logger::_log(std::string logMsg){
-    printf("%s\n", logMsg.c_str()); //printf = C Function
-
-    /*
-    if(lvl <= logLevel){
-        printf("%s\n", logMsg); //printf = C Function
+void logger::_log(logMessage logMsg){
+    if(logMsg.msgLvl <= mLogLevel){
+        printf("%s\n", logMsg.msg.c_str()); //printf = C Function
     }
 
-    if (lvl <= WARN){
-        writeToFile(lvl, buffer);
+    if(logMsg.msgLvl <= WARN){
+        writeToFile(logMsg.msg);
     }
-    */
 }
 
-void logger::writeToFile(logLevel lvl, std::string logMsg){
+void logger::writeToFile(std::string logLine){
     if(mOut.is_open()){
-        mOut << util::GetTimeString("%Y-%m-%d %X").c_str() << " " << getLogTag(lvl).c_str() << " " << logMsg.c_str() << "\n";
+        mOut << logLine.c_str() << "\n";
         mOut.flush();
     }
     return;
 }
 
 void logger::startLogThread(){
-    mlogThread = std::thread([=] {
+    mlogThread.emplace_back([=] {
+        printf("Thread is starting\n");
         while(true){
-            std::string logMsg;
+            logMessage logMsg;
 
             {
                 std::unique_lock<std::mutex> lock{mNotifyMutex};
-                mNotifyVar.wait(lock, [=] { return !mLogs.empty(); });
+                mNotifyVar.wait(lock, [=] { return mStopping || !mLogs.empty(); });
 
-                if(mLogs.empty())
+                if(mStopping && mLogs.empty()){
+                    printf("Thread is stopping\n");
                     break;
+                }
 
+                printf("Thread is doing something\n");
                 logMsg = std::move(mLogs.front());
                 mLogs.pop();
             }
@@ -169,7 +180,6 @@ void logger::startLogThread(){
             _log(logMsg);
         }
     });
-    mlogThread.detach();
 }
 
 }
