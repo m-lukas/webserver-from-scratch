@@ -60,10 +60,13 @@ void Server::Listen(int port){
 
     switch (m_conmode) {
     case util::CON_MODE_PROCESS:
-        listenProcess(port);
+        listenProcess();
         break;
     case util::CON_MODE_POOL:
-        listenPool(port);
+        listenPool();
+        break;
+    case util::CON_MODE_SINGLE_THREAD:
+        listenSingleThread();
         break;
     default:
         logger::error("unhandeled concurrency mode: %d", m_conmode);
@@ -71,7 +74,7 @@ void Server::Listen(int port){
     }
 }
 
-void Server::listenProcess(int port){
+void Server::listenProcess(){
 
     signal(SIGCHLD, util::RemoveZombies);
     m_running = true;
@@ -94,10 +97,10 @@ void Server::listenProcess(int port){
     m_socket.Close();
 }
 
-void Server::listenPool(int port){
+void Server::listenPool(){
 
     m_running = true;
-    ThreadPool workers{100};
+    ThreadPool workers{5};
 
     while(m_running){
         Socket sock = m_socket.Accept(); //variable and pointer are only valid for one round of the loop - !!! POINTER MIGHT BE THE SAME IN THE NEXT ITERATION
@@ -106,6 +109,23 @@ void Server::listenPool(int port){
         workers.Add([=] () mutable -> void {
             this->handleRequest(sock);
         });
+    }
+
+    m_socket.Close();
+}
+
+void Server::listenSingleThread(){
+
+    m_running = true;
+
+    while(m_running){
+        Socket sock = m_socket.Accept(); //variable and pointer are only valid for one round of the loop - !!! POINTER MIGHT BE THE SAME IN THE NEXT ITERATION
+        if(sock.InvalidDescriptor()) continue;
+
+        std::thread ct([=] () mutable -> void {
+            this->handleRequest(sock);
+        });
+        ct.detach();
     }
 
     m_socket.Close();
@@ -136,7 +156,9 @@ void Server::handleRequest(Socket acceptSock){
     std::string path = req.getHeader().getPath();
     auto iter = m_routes.find(path);
 
-    printf("Handling Request: /%s\n", path.c_str());
+    auto tid = std::this_thread::get_id();
+
+    std::cout << "Handling Request: /" << path << " on thread " << tid << std::endl;
 
     switch (method)
     {

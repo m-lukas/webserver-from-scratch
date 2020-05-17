@@ -17,8 +17,9 @@ private:
     std::string m_name;
     util::CON_MODE m_conmode;
 
-    void listenProcess(int port);
-    void listenPool(int port);
+    void listenProcess();
+    void listenPool();
+    void listenSingleThread();
     void handleRequest(Socket sock);
 public:
     Server();
