@@ -96,7 +96,7 @@ void Server::Listen(int port){
     signal(SIGPIPE, SIG_IGN);
 
     m_running = true;
-    ThreadPool workers{10};
+    ThreadPool workers{100};
 
     while(m_running){
         Socket sock = m_socket.Accept(); //variable and pointer are only valid for one round of the loop - !!! POINTER MIGHT BE THE SAME IN THE NEXT ITERATION
