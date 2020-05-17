@@ -128,12 +128,11 @@ void logger::log(logLevel lvl, const char *msg, Args... args){
     std::string msgStr = util::GetTimeString("%Y-%m-%d %X") + " " + getLogTag(lvl) + " " + bufferStr;
     logMessage logMsg{lvl, msgStr};
 
-    std::cout << "Log function running on process: " << ::getpid() << std::endl;
+    //std::cout << "Log function running on process: " << ::getpid() << std::endl;
 
     {
         std::unique_lock<std::mutex> lock{mNotifyMutex};
         mLogs.emplace(logMsg);
-        printf("Size: %d\n", mLogs.size());
     }
 
     mNotifyVar.notify_one();
@@ -159,7 +158,6 @@ void logger::writeToFile(std::string logLine){
 
 void logger::startLogThread(){
     mlogThread.emplace_back([=] {
-        printf("Thread is starting\n");
         while(true){
             logMessage logMsg;
 
@@ -167,12 +165,9 @@ void logger::startLogThread(){
                 std::unique_lock<std::mutex> lock{mNotifyMutex};
                 mNotifyVar.wait(lock, [=] { return mStopping || !mLogs.empty(); });
 
-                if(mStopping && mLogs.empty()){
-                    printf("Thread is stopping\n");
+                if(mStopping && mLogs.empty())
                     break;
-                }
 
-                printf("Thread is doing something\n");
                 logMsg = std::move(mLogs.front());
                 mLogs.pop();
             }

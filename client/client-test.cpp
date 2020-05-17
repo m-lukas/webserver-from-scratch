@@ -12,9 +12,9 @@ int main(int argc, char* argv[]) {
     int conns = 100;
 
     if(argc > 2){
-        if(strcmp(argv[1], "-conns") == 0){
+        if(strcmp(argv[1], "--conns") == 0){
             conns = atoi(argv[2]);
-        } 
+        }   
     }
     
     for (int i = 0; i < conns; i++){
