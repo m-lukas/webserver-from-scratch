@@ -9,7 +9,7 @@
 int main(int argc, char* argv[]) {
     pid_t child_pid, wpid;
     int status = 0;
-    int conns = 25;
+    int conns = 100;
 
     if(argc > 2){
         if(strcmp(argv[1], "-conns") == 0){
