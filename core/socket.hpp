@@ -18,6 +18,7 @@ private:
     struct sockaddr_in m_address;
 private:
     explicit Socket(int socket, sockaddr_in address, int port) : m_socket(socket), m_address(address), m_port(port) {};
+    void setOpt(SockOpt opt, const void *value, size_t size);
 public:
     Socket();
     Socket(Socket&& s) : m_socket{s.m_socket} {};

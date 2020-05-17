@@ -45,7 +45,7 @@ void Server::ListenProcess(int port){
     try
     {
         m_socket.SetOpt(REUSE_ADDRESS, 1);
-        //m_socket.SetTimeout(10);
+        m_socket.SetTimeout(10);
         m_socket.Bind(port);
         m_socket.Listen();
     }

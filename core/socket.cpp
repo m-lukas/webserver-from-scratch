@@ -34,16 +34,20 @@ Socket::~Socket()
     //close(m_socket); //Gets triggered after request reading (outside of try block)
 }
 
+void Socket::setOpt(SockOpt opt, const void *value, size_t size){
+    int err = setsockopt(m_socket, SOL_SOCKET, mapSockOpt(opt), value, size);
+    if(err != 0) throw std::runtime_error("cannot set socket option");
+}
+
 void Socket::SetTimeout(int seconds){
     struct timeval tv;
     tv.tv_sec = seconds;
-    int err = setsockopt(m_socket, SOL_SOCKET, mapSockOpt(TIMEOUT), (struct timeval *)&tv, sizeof(struct timeval));
-    if(err != 0) throw std::runtime_error("cannot set timeout option");
+    tv.tv_usec  = 500000;
+    setOpt(TIMEOUT, (struct timeval *)&tv, sizeof(struct timeval));
 }
 
 void Socket::SetOpt(SockOpt opt, int value){
-    int err = setsockopt(m_socket, SOL_SOCKET, mapSockOpt(opt), &value, sizeof(value));
-    if(err != 0) throw std::runtime_error("cannot set socket option");
+    setOpt(opt, &value, sizeof(value));
 }
 
 void Socket::Bind(int port){
