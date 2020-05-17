@@ -48,11 +48,13 @@ void Response::Error(){
 }
 
 void Response::Send(std::string message){
+    /*
     r_header.Add("Content-Type", "text/plain");
     r_header.Add("Content-Length", std::to_string(message.size()));
     r_header.Add("Date", util::GetTimeString("%a, %e %b %Y %X %Z"));
     if(r_server != ""){ r_header.Add("Server", r_server); }
     r_header.Write(r_socket);
+    */
 
     for(long min = 0; min < message.size(); min+=(CHUNKSIZE-1)){
         char resp[CHUNKSIZE];

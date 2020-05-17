@@ -74,7 +74,7 @@ int Request::Parse(){
     while(getline(ss, line, '\n')){
         contentLength += line.size()+1;
 
-        if(line == "\r"){
+        if(line == "\r" || line == ""){
             break; //end of header
         }
 

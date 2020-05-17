@@ -9,6 +9,10 @@
 #include <stdio.h> 
 #include <sys/types.h>
 #include <thread>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string>
 
 #include "server.h"
 #include "socket.cpp"
@@ -51,16 +55,20 @@ void Server::ListenProcess(int port){
     }
     
     m_running = true;
-    ThreadPool workers{10};
 
     while(m_running){
-        printf("Waiting for Request\n");
         Socket sock = m_socket.Accept();
         if(sock.InvalidDescriptor()) continue;
 
-        workers.Add([this, &sock] {
-            this->handleRequest(sock);
-        });
+        auto pid = fork();
+
+        if(pid == 0){ //child
+            m_socket.Close();
+            handleRequest(sock);
+            exit(0);
+        }else{
+            sock.Close(); //close parent copy
+        }
     }
 
     m_socket.Close();
@@ -77,19 +85,20 @@ void Server::Listen(int port){
     }
     catch(const std::exception& e)
     {
-        logger::error(e.what());
+        logger::error("%s", e.what());
         return;
     }
     
     m_running = true;
     ThreadPool workers{10};
 
+    signal(SIGPIPE, SIG_IGN);
+
     while(m_running){
-        printf("Waiting for Request\n");
-        Socket sock = m_socket.Accept();
+        Socket sock = m_socket.Accept(); //variable and pointer are only valid for one round of the loop - !!! POINTER MIGHT BE THE SAME IN THE NEXT ITERATION
         if(sock.InvalidDescriptor()) continue;
 
-        workers.Add([this, &sock] {
+        workers.Add([=] () mutable -> void {
             this->handleRequest(sock);
         });
     }
@@ -105,14 +114,16 @@ void Server::handleRequest(Socket acceptSock){
 
     auto valread = req.Read();
     if(valread < 0){
+        logger::debug("Couldn't read request - Error: %s", strerror(errno));
         acceptSock.Close();
         return;
     }
     
     auto err = req.Parse();
     if(err != 0) {
-        logger::debug("Request Parsing Failed");
+        logger::debug("Request Parsing Failed - Error: %d", err);
         resp.Status(500)->Error();
+        acceptSock.Close();
         return;
     }
 
@@ -120,7 +131,7 @@ void Server::handleRequest(Socket acceptSock){
     std::string path = req.getHeader().getPath();
     auto iter = m_routes.find(path);
 
-    printf("Handling Request: %s\n", path.c_str());
+    printf("Handling Request: /%s\n", path.c_str());
 
     switch (method)
     {
@@ -140,10 +151,9 @@ void Server::handleRequest(Socket acceptSock){
     std::chrono::duration<double> elapsed = endTime - startTime;
     logger::debug("Elapsed Time: %fs", elapsed.count());
 
-    acceptSock.Close();
+    sleep(5);
 
-    printf("Finished Request\n");
-    printf("----------------------------\n");
+    acceptSock.Close();
 
     return;
 }

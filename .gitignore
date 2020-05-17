@@ -13,3 +13,4 @@ socket_old/
 build/
 *.jpg
 *.png
+client/client3.py

@@ -24,5 +24,6 @@ public:
     std::string GetServerName(){ return m_name; }
 
     void Listen(int port);
+    void ListenProcess(int port);
     void Stop();
 };
