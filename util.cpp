@@ -6,6 +6,8 @@
 #include <ctime>
 #include <iomanip>
 #include <array>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 namespace util{
 
@@ -50,6 +52,27 @@ std::string GetTimeString(std::string format){
     std::stringstream ss;
     ss << std::put_time(std::localtime(&in_time_t), format.c_str());
     return ss.str();
+}
+
+void RemoveZombies(int sig){
+    while (true)
+    {
+        pid_t pid = 0;
+        int status;
+
+        try
+        {
+            pid = waitpid(-1, &status, WNOHANG);
+        }
+        catch(const std::exception& e)
+        {
+            return;
+        }
+
+        if(pid == 0){
+            return; //no more zombies
+        }
+    }
 }
    
 }

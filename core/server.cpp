@@ -21,6 +21,7 @@
 #include "../http/response.h"
 #include "../http/header.h"
 #include "../logger/logger.h"
+#include "../util.cpp"
 
 Server::Server(){
     m_running = false;
@@ -44,7 +45,7 @@ void Server::ListenProcess(int port){
     try
     {
         m_socket.SetOpt(REUSE_ADDRESS, 1);
-        m_socket.SetTimeout(10);
+        //m_socket.SetTimeout(10);
         m_socket.Bind(port);
         m_socket.Listen();
     }
@@ -53,6 +54,9 @@ void Server::ListenProcess(int port){
         logger::error(e.what());
         return;
     }
+
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGCHLD, util::RemoveZombies);
     
     m_running = true;
 
@@ -89,10 +93,10 @@ void Server::Listen(int port){
         return;
     }
     
+    signal(SIGPIPE, SIG_IGN);
+
     m_running = true;
     ThreadPool workers{10};
-
-    signal(SIGPIPE, SIG_IGN);
 
     while(m_running){
         Socket sock = m_socket.Accept(); //variable and pointer are only valid for one round of the loop - !!! POINTER MIGHT BE THE SAME IN THE NEXT ITERATION

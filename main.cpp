@@ -20,6 +20,6 @@ int main(int argc, char* argv[]){
     server.Route("/", getIndex);
     server.Route("/hello", getHello);
 
-    server.Listen(PORT); //TODO: Define Adress
+    server.ListenProcess(PORT); //TODO: Define Adress
     return 1;
 }
