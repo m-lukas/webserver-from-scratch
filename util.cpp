@@ -11,6 +11,11 @@
 
 namespace util{
 
+enum CON_MODE {
+    CON_MODE_POOL,
+    CON_MODE_PROCESS
+};
+
 std::vector<std::string> Split(std::string s, char delimiter, int cases){
     std::vector<std::string> v;
 

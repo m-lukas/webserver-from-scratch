@@ -2,6 +2,7 @@
 #include "logger/logger.h"
 
 #include "routes/general.cpp"
+#include "util.cpp"
 
 #define PORT 8080
 #define NAME "lukas's server"
@@ -20,6 +21,8 @@ int main(int argc, char* argv[]){
     server.Route("/", getIndex);
     server.Route("/hello", getHello);
 
-    server.ListenProcess(PORT); //TODO: Define Adress
+    server.SetConcurrencyMode(util::CON_MODE_POOL);
+
+    server.Listen(PORT); //TODO: Define Adress
     return 1;
 }

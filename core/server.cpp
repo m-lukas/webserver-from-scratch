@@ -15,7 +15,7 @@
 #include <string>
 
 #include "server.h"
-#include "socket.cpp"
+#include "socket.hpp"
 #include "threadpool.h"
 #include "../http/request.h"
 #include "../http/response.h"
@@ -41,7 +41,7 @@ void Server::SetName(std::string name){
     m_name = name;
 }
 
-void Server::ListenProcess(int port){
+void Server::Listen(int port){
     try
     {
         m_socket.SetOpt(REUSE_ADDRESS, 1);
@@ -55,9 +55,25 @@ void Server::ListenProcess(int port){
         return;
     }
 
+    //ignore broken pipes
     signal(SIGPIPE, SIG_IGN);
+
+    switch (m_conmode) {
+    case util::CON_MODE_PROCESS:
+        listenProcess(port);
+        break;
+    case util::CON_MODE_POOL:
+        listenPool(port);
+        break;
+    default:
+        logger::error("unhandeled concurrency mode: %d", m_conmode);
+        break;
+    }
+}
+
+void Server::listenProcess(int port){
+
     signal(SIGCHLD, util::RemoveZombies);
-    
     m_running = true;
 
     while(m_running){
@@ -78,22 +94,7 @@ void Server::ListenProcess(int port){
     m_socket.Close();
 }
 
-void Server::Listen(int port){
-
-    try
-    {
-        m_socket.SetOpt(REUSE_ADDRESS, 1);
-        m_socket.SetTimeout(10);
-        m_socket.Bind(port);
-        m_socket.Listen();
-    }
-    catch(const std::exception& e)
-    {
-        logger::error("%s", e.what());
-        return;
-    }
-    
-    signal(SIGPIPE, SIG_IGN);
+void Server::listenPool(int port){
 
     m_running = true;
     ThreadPool workers{100};
