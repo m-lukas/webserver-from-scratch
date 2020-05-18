@@ -23,6 +23,7 @@ public:
     void Add(Task task){
         {
             std::unique_lock<std::mutex> lock{mEventMutex};
+            //emplacing is protected by a lock as well to avoid race conditions
             mTasks.emplace(task);
         }
 
@@ -32,7 +33,7 @@ public:
 private:
     std::vector<std::thread> mThreads;
 
-    std::condition_variable mEventVar;
+    std::condition_variable mEventVar; //synchronization primative
 
     std::mutex mEventMutex;
     bool mStopping = false;
@@ -49,6 +50,8 @@ private:
 
                     {
                         std::unique_lock<std::mutex> lock{mEventMutex};
+                        //waits as long as the queue is empty - lock protects the checking of queue
+                        //check is performed when the condition variable is notified
                         mEventVar.wait(lock, [=] { return mStopping || !mTasks.empty(); });
 
                         if(mStopping && mTasks.empty())
