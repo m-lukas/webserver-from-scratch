@@ -4,7 +4,7 @@
 #include "routes/general.cpp"
 #include "util.cpp"
 
-#define PORT 8080
+#define PORT 5000
 #define NAME "lukas's server"
 
 int main(int argc, char* argv[]){

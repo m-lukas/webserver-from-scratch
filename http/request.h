@@ -27,7 +27,7 @@ public:
 long Request::Read(){
     memset(r_raw, 0, 30000);
     long valread = r_socket.Read(r_raw);
-    //printf("%s\n", r_raw);
+    printf("%s\n", r_raw);
     return valread;
 }
 
