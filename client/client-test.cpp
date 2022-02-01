@@ -4,12 +4,14 @@
 
 #define ADDRESS "127.0.0.1"
 #define PORT 8080
-#define REQUEST "GET /hello HTTP/1.1\r\nHost: localhost:8080\r\n"
+#define REQUEST "GET / HTTP/1.1\r\nHost: localhost:8080\r\n"
 
 int main(int argc, char* argv[]) {
     pid_t child_pid, wpid;
     int status = 0;
-    int conns = 100;
+    int conns = 1000;
+
+    printf("Port: %d\n",PORT);
 
     if(argc > 2){
         if(strcmp(argv[1], "-conns") == 0){

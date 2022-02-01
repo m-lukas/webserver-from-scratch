@@ -4,7 +4,7 @@
 #include "routes/general.cpp"
 #include "util.cpp"
 
-#define PORT 5000
+#define PORT 8080
 #define NAME "lukas's server"
 
 int main(int argc, char* argv[]){
@@ -21,7 +21,7 @@ int main(int argc, char* argv[]){
     server.Route("/", getIndex);
     server.Route("/hello", getHello);
 
-    server.SetConcurrencyMode(util::CON_MODE_POOL);
+    server.SetConcurrencyMode(util::CON_MODE_SINGLE_THREAD);
 
     server.Listen(PORT); //TODO: Define Adress
     return 1;

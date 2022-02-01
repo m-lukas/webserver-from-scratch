@@ -5,6 +5,8 @@ setup:
 compile:
 	cmake --build ./build -v
 
+compile-client:
+	g++ client/client-test.cpp -std=gnu++11 -o client/client
 run:
 	./build/bin/main
 
