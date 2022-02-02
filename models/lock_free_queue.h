@@ -33,9 +33,6 @@ private:
             new_count.internal_count=0;
             new_count.external_counters=2;
             count.store(new_count);
-
-            next.ptr=nullptr;
-            next.external_count=0;
         }
         void release_ref()
         {
@@ -110,6 +107,21 @@ private:
             current_tail_ptr->release_ref();
     }
 public:
+    lock_free_queue()
+    {
+      counted_node_ptr new_head;
+      new_head.ptr = new node;
+      new_head.external_count = 1;
+      head.store(new_head);
+      tail = head.load();
+    }
+    lock_free_queue(const lock_free_queue& other)=delete;
+    lock_free_queue& operator=(const lock_free_queue& other)=delete;
+    ~lock_free_queue()
+    {
+      while(pop());
+      delete head.load().ptr;
+    }
     void push(T new_value)
     {
         std::unique_ptr<T> new_data(new T(new_value));
@@ -122,8 +134,7 @@ public:
             increase_external_count(tail,old_tail);
             T* old_data=nullptr;
             if(old_tail.ptr->data.compare_exchange_strong(
-                old_data, new_data.get()
-            ))
+                old_data, new_data.get()))
             {
                 counted_node_ptr old_next={0};
                 if(!old_tail.ptr->next.compare_exchange_strong(
