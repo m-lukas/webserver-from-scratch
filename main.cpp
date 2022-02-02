@@ -1,5 +1,6 @@
 #include "core/server.cpp"
 #include "logger/logger.h"
+#include "models/workstealing_threadpool.h"
 
 #include "routes/general.cpp"
 #include "util.cpp"
