@@ -7,18 +7,18 @@
 #include <iostream>
 #include <chrono>
 
-#include "lock_free_queue.h"
+#include "threadsafe_queue.h"
 
-class lockfree_threadpool
+class threadsafe_threadpool
 {
 public:
     using Task = std::function<void()>;
 
-    explicit lockfree_threadpool(std::size_t numThreads){
+    explicit threadsafe_threadpool(std::size_t numThreads){
         start(numThreads);
     }
 
-    ~lockfree_threadpool(){
+    ~threadsafe_threadpool(){
         done=true;
     }
 
@@ -29,7 +29,7 @@ public:
 private:
     std::vector<std::thread> mThreads;
     std::atomic_bool done;
-    lock_free_queue<Task> mTasks;
+    threadsafe_queue<Task> mTasks;
 
     void start(std::size_t numThreads){
         for (auto i = 0u; i < numThreads; ++i)
@@ -37,16 +37,9 @@ private:
             mThreads.emplace_back([=] {
                 while(!done){
                     {
-                        std::unique_ptr<Task> res = mTasks.pop();
-                        if(res != std::unique_ptr<Task>())
-                        {
-                            Task task = *res.get();
-                            task();
-                        }
-                        // else
-                        // {
-                        //     std::this_thread::sleep_for(std::chrono::milliseconds(20));
-                        // }
+                        Task task;
+                        mTasks.wait_and_pop(task);
+                        task();
                     }
                     
                 }

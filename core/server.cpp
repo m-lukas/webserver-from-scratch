@@ -18,6 +18,7 @@
 #include "socket.hpp"
 #include "../models/threadpool.h"
 #include "../models/lockfree_threadpool.h"
+#include "../models/threadsafe_threadpool.h"
 #include "../http/request.h"
 #include "../http/response.h"
 #include "../http/header.h"
@@ -72,6 +73,9 @@ void Server::Listen(int port){
     case util::CON_MODE_POOL_LOCKFREE:
         listenLockFreePool();
         break;
+    case util::CON_MODE_POOL_THREADSAFE:
+        listenThreadSafePool();
+        break;
     default:
         logger::error("unhandeled concurrency mode: %d", m_conmode);
         break;
@@ -122,6 +126,23 @@ void Server::listenLockFreePool(){
 
     m_running = true;
     lockfree_threadpool workers{3};
+
+    while(m_running){
+        Socket sock = m_socket.Accept(); //variable and pointer are only valid for one round of the loop - !!! POINTER MIGHT BE THE SAME IN THE NEXT ITERATION
+        if(sock.InvalidDescriptor()) continue;
+
+        workers.Add([=] () mutable -> void {
+            this->handleRequest(sock);
+        });
+    }
+
+    m_socket.Close();
+}
+
+void Server::listenThreadSafePool(){
+
+    m_running = true;
+    threadsafe_threadpool workers{3};
 
     while(m_running){
         Socket sock = m_socket.Accept(); //variable and pointer are only valid for one round of the loop - !!! POINTER MIGHT BE THE SAME IN THE NEXT ITERATION

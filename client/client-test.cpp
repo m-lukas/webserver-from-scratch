@@ -9,7 +9,7 @@
 int main(int argc, char* argv[]) {
     pid_t child_pid, wpid;
     int status = 0;
-    int conns = 10;
+    int conns = 100;
 
     printf("Port: %d\n",PORT);
 

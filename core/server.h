@@ -18,9 +18,10 @@ private:
     util::CON_MODE m_conmode;
 
     void listenProcess();
+    void listenSingleThread();
     void listenPool();
     void listenLockFreePool();
-    void listenSingleThread();
+    void listenThreadSafePool();
     void handleRequest(Socket sock);
 public:
     Server();

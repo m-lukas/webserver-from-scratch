@@ -22,7 +22,7 @@ int main(int argc, char* argv[]){
     server.Route("/", getIndex);
     server.Route("/hello", getHello);
 
-    server.SetConcurrencyMode(util::CON_MODE_POOL_LOCKFREE);
+    server.SetConcurrencyMode(util::CON_MODE_PROCESS);
 
     server.Listen(PORT); //TODO: Define Adress
     return 1;
