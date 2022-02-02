@@ -19,6 +19,7 @@ private:
 
     void listenProcess();
     void listenPool();
+    void listenLockFreePool();
     void listenSingleThread();
     void handleRequest(Socket sock);
 public:

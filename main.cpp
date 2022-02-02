@@ -1,5 +1,6 @@
 #include "core/server.cpp"
 #include "logger/logger.h"
+#include "models/lockfree_threadpool.h"
 
 #include "routes/general.cpp"
 #include "util.cpp"
@@ -21,7 +22,7 @@ int main(int argc, char* argv[]){
     server.Route("/", getIndex);
     server.Route("/hello", getHello);
 
-    server.SetConcurrencyMode(util::CON_MODE_SINGLE_THREAD);
+    server.SetConcurrencyMode(util::CON_MODE_POOL_LOCKFREE);
 
     server.Listen(PORT); //TODO: Define Adress
     return 1;

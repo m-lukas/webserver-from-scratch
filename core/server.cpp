@@ -17,6 +17,7 @@
 #include "server.h"
 #include "socket.hpp"
 #include "../models/threadpool.h"
+#include "../models/lockfree_threadpool.h"
 #include "../http/request.h"
 #include "../http/response.h"
 #include "../http/header.h"
@@ -62,11 +63,14 @@ void Server::Listen(int port){
     case util::CON_MODE_PROCESS:
         listenProcess();
         break;
+    case util::CON_MODE_SINGLE_THREAD:
+        listenSingleThread();
+        break;
     case util::CON_MODE_POOL:
         listenPool();
         break;
-    case util::CON_MODE_SINGLE_THREAD:
-        listenSingleThread();
+    case util::CON_MODE_POOL_LOCKFREE:
+        listenLockFreePool();
         break;
     default:
         logger::error("unhandeled concurrency mode: %d", m_conmode);
@@ -100,7 +104,24 @@ void Server::listenProcess(){
 void Server::listenPool(){
 
     m_running = true;
-    ThreadPool workers{5};
+    ThreadPool workers{3};
+
+    while(m_running){
+        Socket sock = m_socket.Accept(); //variable and pointer are only valid for one round of the loop - !!! POINTER MIGHT BE THE SAME IN THE NEXT ITERATION
+        if(sock.InvalidDescriptor()) continue;
+
+        workers.Add([=] () mutable -> void {
+            this->handleRequest(sock);
+        });
+    }
+
+    m_socket.Close();
+}
+
+void Server::listenLockFreePool(){
+
+    m_running = true;
+    lockfree_threadpool workers{3};
 
     while(m_running){
         Socket sock = m_socket.Accept(); //variable and pointer are only valid for one round of the loop - !!! POINTER MIGHT BE THE SAME IN THE NEXT ITERATION
@@ -177,8 +198,6 @@ void Server::handleRequest(Socket acceptSock){
     auto endTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = endTime - startTime;
     logger::debug("Elapsed Time: %fs", elapsed.count());
-
-    sleep(5);
 
     acceptSock.Close();
 
