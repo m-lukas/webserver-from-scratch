@@ -19,6 +19,7 @@
 #include "../models/threadpool.h"
 #include "../models/lockfree_threadpool.h"
 #include "../models/threadsafe_threadpool.h"
+#include "../models/dispatch_queue.h"
 #include "../http/request.h"
 #include "../http/response.h"
 #include "../http/header.h"
@@ -75,6 +76,9 @@ void Server::Listen(int port){
         break;
     case util::CON_MODE_POOL_THREADSAFE:
         listenThreadSafePool();
+        break;
+    case util::CON_MODE_DISPATCH_QUEUE:
+        listenDispatchQueue();
         break;
     default:
         logger::error("unhandeled concurrency mode: %d", m_conmode);
@@ -149,6 +153,23 @@ void Server::listenThreadSafePool(){
         if(sock.InvalidDescriptor()) continue;
 
         workers.Add([=] () mutable -> void {
+            this->handleRequest(sock);
+        });
+    }
+
+    m_socket.Close();
+}
+
+void Server::listenDispatchQueue(){
+
+    m_running = true;
+    dispatch_queue dq;
+
+    while(m_running){
+        Socket sock = m_socket.Accept(); //variable and pointer are only valid for one round of the loop - !!! POINTER MIGHT BE THE SAME IN THE NEXT ITERATION
+        if(sock.InvalidDescriptor()) continue;
+
+        dq.add([=] () mutable -> void {
             this->handleRequest(sock);
         });
     }

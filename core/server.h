@@ -22,6 +22,7 @@ private:
     void listenPool();
     void listenLockFreePool();
     void listenThreadSafePool();
+    void listenDispatchQueue();
     void handleRequest(Socket sock);
 public:
     Server();
