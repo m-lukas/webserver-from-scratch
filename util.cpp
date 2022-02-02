@@ -16,8 +16,7 @@ enum CON_MODE {
     CON_MODE_SINGLE_THREAD,
     CON_MODE_POOL,
     CON_MODE_POOL_LOCKFREE,
-    CON_MODE_POOL_THREADSAFE,
-    CON_MODE_POOL_WORKSTEALING,
+    CON_MODE_POOL_THREADSAFE
 };
 
 std::vector<std::string> Split(std::string s, char delimiter, int cases){
